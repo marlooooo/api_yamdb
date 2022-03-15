@@ -4,10 +4,10 @@ from django.contrib.auth.models import AbstractUser
 
 class User(AbstractUser):
     """Класс, описывающий стандартного пользователя."""
-    class Role(models.IntegerChoices):
-        user = 0
-        moderator = 1
-        admin = 2
+    class Role(models.Choices):
+        USER = 'user'
+        MODERATOR = 'moderator'
+        ADMIN = 'admin'
 
     email = models.EmailField(
         'email',
@@ -24,10 +24,13 @@ class User(AbstractUser):
         blank=True,
     )
     bio = models.TextField(
+        'biography',
         blank=True,
         null=True,
     )
-    role = models.IntegerField(
-        default=1,
+    role = models.CharField(
+        'role',
+        default=Role.USER,
         choices=Role.choices,
+        max_length=10,
     )
