@@ -27,10 +27,7 @@ class User(AbstractUser):
         blank=True,
         null=True,
     )
-    role = models.CharField(
-        max_length=255,
-        default='user',
-        null=True,
-        blank=True,
+    role = models.IntegerField(
+        default=1,
         choices=Role.choices,
     )
