@@ -1,10 +1,13 @@
 from django.db import models
 from django.contrib.auth.models import AbstractUser
+from django.core.validators import MaxValueValidator, MinValueValidator
+
+from datetime import datetime
 
 
 class User(AbstractUser):
     """Класс, описывающий стандартного пользователя."""
-    class Role(models.Choices):
+    class Role(models.TextChoices):
         USER = 'user'
         MODERATOR = 'moderator'
         ADMIN = 'admin'
@@ -36,11 +39,48 @@ class User(AbstractUser):
     )
 
 
+class Genre(models.Model):
+    '''Класс, описывающий жанр'''
+
+
+class Category(models.Model):
+    '''Класс, описывающий категорию'''
+
+
 class Title(models.Model):
-    pass
+    '''Класс, описывающий произведение'''
+    name = models.TextField(
+        'Название',
+        default='Название произведения'
+    )
+    year = models.IntegerField(
+        'Год выпуска',
+        validators=(MaxValueValidator(datetime.now().year),),
+        blank=True,
+        null=True,
+    )
+    # rating =
+    description = models.TextField(
+        'Описание',
+        blank=True,
+        null=True
+    )
+    genre = models.ForeignKey(
+        Genre,
+        on_delete=models.SET_NULL,
+        blank=True,
+        null=True
+    )
+    category = models.ForeignKey(
+        Category,
+        on_delete=models.SET_NULL,
+        blank=True,
+        null=True
+    )
 
 
 class Review(models.Model):
+    '''Класс, описывающий отзывы'''
     title = models.ForeignKey(
         Title,
         on_delete=models.CASCADE,
@@ -52,7 +92,8 @@ class Review(models.Model):
         on_delete=models.CASCADE,
         related_name='reviews',
     )
-    score = models.IntegerField('Оценка', )
+    score = models.IntegerField('Оценка', validators=(MinValueValidator(1),
+                                MaxValueValidator(10)))
     pub_date = models.DateTimeField('Дата и время публикации',
                                     auto_now_add=True)
 
@@ -64,6 +105,7 @@ class Review(models.Model):
 
 
 class Comment(models.Model):
+    '''Класс, описывающий комментарии'''
     review = models.ForeignKey(
         Review,
         on_delete=models.CASCADE,

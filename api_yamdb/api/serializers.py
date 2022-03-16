@@ -3,6 +3,8 @@ from django.conf import settings
 
 from rest_framework import serializers
 
+from reviews import models 
+
 # Доступ к моделям через apps.get_model(app_label='review', model_name='User')
 
 
@@ -20,3 +22,19 @@ class UserSerializer(serializers.ModelSerializer):
             'bio',
             'role',
         )
+
+
+class ReviewSerializer(serializers.ModelSerializer):
+    author = serializers.SlugRelatedField(
+        slug_field='username',
+        read_only=True,
+        default=serializers.CurrentUserDefault()
+    )
+    pub_date = serializers.DateTimeField(read_only=True)
+    class Meta:
+        fields = ('id', 'text', 'author', 'score', 'pub_date')
+        model = models.Review
+
+
+class CommentSerializer(serializers.ModelSerializer):
+    pass
