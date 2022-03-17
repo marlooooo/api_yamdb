@@ -20,9 +20,6 @@ class UserSerializer(serializers.ModelSerializer):
             'bio',
             'role',
         )
-from rest_framework import serializers
-
-from reviews import models
 
 
 class ReviewSerializer(serializers.ModelSerializer):
