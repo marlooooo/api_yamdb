@@ -43,15 +43,15 @@ class User(AbstractUser):
 
 
 class Genre(models.Model):
-    '''Класс, описывающий жанр'''
+    """Класс, описывающий жанр."""
 
 
 class Category(models.Model):
-    '''Класс, описывающий категорию'''
+    """Класс, описывающий категорию."""
 
 
 class Title(models.Model):
-    '''Класс, описывающий произведение'''
+    """Класс, описывающий произведение."""
     name = models.TextField(
         'Название',
         default='Название произведения'
@@ -83,7 +83,7 @@ class Title(models.Model):
 
 
 class Review(models.Model):
-    '''Класс, описывающий отзывы'''
+    """Класс, описывающий отзывы."""
     title = models.ForeignKey(
         Title,
         on_delete=models.CASCADE,
@@ -108,7 +108,7 @@ class Review(models.Model):
 
 
 class Comment(models.Model):
-    '''Класс, описывающий комментарии'''
+    """Класс, описывающий комментарии."""
     review = models.ForeignKey(
         Review,
         on_delete=models.CASCADE,
