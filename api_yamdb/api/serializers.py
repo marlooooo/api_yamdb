@@ -31,6 +31,7 @@ class ReviewSerializer(serializers.ModelSerializer):
         default=serializers.CurrentUserDefault()
     )
     pub_date = serializers.DateTimeField(read_only=True)
+
     class Meta:
         fields = ('id', 'text', 'author', 'score', 'pub_date')
         model = models.Review

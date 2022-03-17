@@ -8,9 +8,9 @@ from datetime import datetime
 class User(AbstractUser):
     """Класс, описывающий стандартного пользователя."""
     class Role(models.TextChoices):
-        USER = 'user'
-        MODERATOR = 'moderator'
-        ADMIN = 'admin'
+        USER = 'user', '0'
+        MODERATOR = 'moderator', '1'
+        ADMIN = 'admin', '2'
 
     email = models.EmailField(
         'email',
@@ -37,6 +37,9 @@ class User(AbstractUser):
         choices=Role.choices,
         max_length=10,
     )
+
+    def permission_level(self) -> int:
+        return int(self.get_role_display())
 
 
 class Genre(models.Model):
