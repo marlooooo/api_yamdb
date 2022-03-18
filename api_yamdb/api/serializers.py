@@ -2,6 +2,7 @@
 from django.conf import settings
 
 from rest_framework import serializers
+from rest_framework.validators import UniqueTogetherValidator
 
 from reviews import models 
 
@@ -9,6 +10,32 @@ from reviews import models
 
 
 User = settings.AUTH_USER_MODEL
+
+
+class UserCreationSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = User
+        fields = (
+            'username',
+            'email',
+        )
+        validators = [
+            UniqueTogetherValidator(
+                queryset=User.objects.all(),
+                fields=(
+                    'username',
+                    'email',
+                ),
+            ),
+        ]
+
+    def validate_username(self, value):
+        """Проверяет правильность содержания поля username."""
+        if 'me' == value.lower():
+            raise serializers.ValidationError(
+                f'Имя пользователя не может быть "{value.lower()}".'
+            )
+        return value
 
 
 class UserSerializer(serializers.ModelSerializer):
@@ -22,6 +49,11 @@ class UserSerializer(serializers.ModelSerializer):
             'bio',
             'role',
         )
+
+
+class JwtTokenSerializer(serializers.ModelSerializer):
+    class Meta:
+        fields = ('username', 'conformation_code')
 
 
 class ReviewSerializer(serializers.ModelSerializer):
