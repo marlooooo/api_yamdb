@@ -44,10 +44,12 @@ class User(AbstractUser):
 
 class Genre(models.Model):
     """Класс, описывающий жанр."""
+    pass
 
 
 class Category(models.Model):
     """Класс, описывающий категорию."""
+    pass
 
 
 class Title(models.Model):
