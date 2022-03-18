@@ -47,13 +47,52 @@ class UserSerializer(serializers.ModelSerializer):
             'first_name',
             'last_name',
             'bio',
+        )
+        validators = [
+            UniqueTogetherValidator(
+                queryset=User.objects.all(),
+                fields=(
+                    'username',
+                    'email',
+                ),
+            ),
+        ]
+
+    def validate_username(self, value):
+        if 'me' == value.lower():
+            raise serializers.ValidationError(
+                f'Имя пользователя не может быть me.'
+            )
+        return value
+
+
+class UserAdminSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = User
+        fields = (
+            'username',
+            'email',
+            'first_name',
+            'last_name',
+            'bio',
             'role',
         )
+        validators = [
+            UniqueTogetherValidator(
+                queryset=User.objects.all(),
+                fields=(
+                    'username',
+                    'email',
+                ),
+            ),
+        ]
 
-
-class JwtTokenSerializer(serializers.ModelSerializer):
-    class Meta:
-        fields = ('username', 'conformation_code')
+    def validate_username(self, value):
+        if value.lower() == 'me':
+            raise serializers.ValidationError(
+                'Имя пользователя не может быть me.'
+            )
+        return value
 
 
 class ReviewSerializer(serializers.ModelSerializer):
