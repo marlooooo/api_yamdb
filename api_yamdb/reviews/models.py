@@ -41,10 +41,33 @@ class User(AbstractUser):
 
 class Genre(models.Model):
     '''Класс, описывающий жанр'''
+    name = models.TextField(
+        'Название',
+        default='Название жанра'
+    )
+    slug = models.SlugField(
+        'id жанра',
+        unique=True
+    )
+
+    def __str__(self):
+        return self.name
+
 
 
 class Category(models.Model):
     '''Класс, описывающий категорию'''
+    name = models.TextField(
+        'Название',
+        default='Название категории'
+    )
+    slug = models.SlugField(
+        'id категории',
+        unique=True
+    )
+
+    def __str__(self):
+        return self.name
 
 
 class Title(models.Model):
