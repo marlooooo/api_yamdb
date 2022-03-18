@@ -1,8 +1,8 @@
-from django.db import models
+from datetime import datetime
+
 from django.contrib.auth.models import AbstractUser
 from django.core.validators import MaxValueValidator, MinValueValidator
-
-from datetime import datetime
+from django.db import models
 
 
 class User(AbstractUser):
@@ -15,6 +15,7 @@ class User(AbstractUser):
     email = models.EmailField(
         'email',
         max_length=254,
+        unique=True
     )
     first_name = models.CharField(
         'first name',
@@ -37,6 +38,14 @@ class User(AbstractUser):
         choices=Role.choices,
         max_length=10,
     )
+
+    class Meta:
+        constraints = [
+            models.constraints.UniqueConstraint(
+                fields=('username', 'email'),
+                name='user_email_constraint'
+            )
+        ]
 
     def permission_level(self) -> int:
         return int(self.get_role_display())

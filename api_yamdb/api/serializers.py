@@ -1,5 +1,5 @@
-# from django.apps import apps
-from django.conf import settings
+from django.apps import apps
+# from django.conf import settings
 
 from rest_framework import serializers
 from rest_framework.validators import UniqueTogetherValidator
@@ -9,7 +9,7 @@ from reviews import models
 # Доступ к моделям через apps.get_model(app_label='review', model_name='User')
 
 
-User = settings.AUTH_USER_MODEL
+User = apps.get_model(app_label='reviews', model_name='User')
 
 
 class UserCreationSerializer(serializers.ModelSerializer):
