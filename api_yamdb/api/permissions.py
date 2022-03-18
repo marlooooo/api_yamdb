@@ -1,7 +1,5 @@
 from rest_framework.permissions import BasePermission, SAFE_METHODS
 
-from .utils import get_role_permission_level
-
 
 class ModeratorOrReadOnly(BasePermission):
     """Доступ только от модератора и выше."""
