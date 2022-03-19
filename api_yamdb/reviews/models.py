@@ -57,7 +57,6 @@ class Genre(models.Model):
         return self.name
 
 
-
 class Category(models.Model):
     """Класс, описывающий категорию"""
     name = models.TextField(
