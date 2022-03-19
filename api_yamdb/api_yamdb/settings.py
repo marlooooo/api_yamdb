@@ -1,6 +1,9 @@
 import os
 from datetime import timedelta
 
+from dotenv import load_dotenv
+
+load_dotenv()
 # Build paths inside the project like this: os.path.join(BASE_DIR, ...)
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
@@ -125,12 +128,12 @@ SIMPLE_JWT = {
     'AUTH_HEADER_TYPES': ('Bearer',),
 }
 
-EMAIL_HOST_USER = 'api.yamdb'
-DEFAULT_FROM_EMAIL = 'api.yamdb@ya.ru'
+EMAIL_HOST_USER = os.getenv('EMAIL_USERNAME')
+DEFAULT_FROM_EMAIL = f'{EMAIL_HOST_USER}@ya.ru'
 EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
 
 EMAIL_HOST = 'smtp.yandex.ru'
 
 EMAIL_USE_SSL = True
 EMAIL_PORT = 465
-EMAIL_HOST_PASSWORD = 'jdusimifgcbcujhu'
+EMAIL_HOST_PASSWORD = os.getenv('EMAIL_PASSWORD')

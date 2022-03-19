@@ -1,8 +1,7 @@
+from django.apps import apps
 from django.shortcuts import get_object_or_404
 from rest_framework import viewsets, pagination, filters
-from django.apps import apps
 
-from . import serializers
 from reviews import models
 from . import serializers
 from .permissions import AdminOrReadOnly
