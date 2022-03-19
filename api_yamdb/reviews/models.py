@@ -44,12 +44,33 @@ class User(AbstractUser):
 
 class Genre(models.Model):
     """Класс, описывающий жанр."""
-    pass
+    name = models.TextField(
+        'Название',
+        default='Название жанра'
+    )
+    slug = models.SlugField(
+        'id жанра',
+        unique=True
+    )
+
+    def __str__(self):
+        return self.name
+
 
 
 class Category(models.Model):
-    """Класс, описывающий категорию."""
-    pass
+    """Класс, описывающий категорию"""
+    name = models.TextField(
+        'Название',
+        default='Название категории'
+    )
+    slug = models.SlugField(
+        'id категории',
+        unique=True
+    )
+
+    def __str__(self):
+        return self.name
 
 
 class Title(models.Model):
@@ -70,9 +91,8 @@ class Title(models.Model):
         blank=True,
         null=True
     )
-    genre = models.ForeignKey(
+    genre = models.ManyToManyField(
         Genre,
-        on_delete=models.SET_NULL,
         blank=True,
         null=True
     )
@@ -82,6 +102,9 @@ class Title(models.Model):
         blank=True,
         null=True
     )
+
+    def __str__(self):
+        return self.name
 
 
 class Review(models.Model):
