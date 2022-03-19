@@ -1,7 +1,5 @@
 from rest_framework.permissions import BasePermission, SAFE_METHODS
 
-from .utils import get_role_permission_level
-
 
 class ModeratorOrReadOnly(BasePermission):
     """Доступ только от модератора и выше."""
@@ -9,8 +7,7 @@ class ModeratorOrReadOnly(BasePermission):
 
     def has_object_permission(self, request, view, obj):
         return (
-            get_role_permission_level(
-                request.user) >= self.MIN_PERMISSION_CLASS
+            request.user.permission_level() >= self.MIN_PERMISSION_CLASS
             or request.user.is_staff
             or request.user.is_superuser
         )

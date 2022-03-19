@@ -8,9 +8,9 @@ from datetime import datetime
 class User(AbstractUser):
     """Класс, описывающий стандартного пользователя."""
     class Role(models.TextChoices):
-        USER = 'user'
-        MODERATOR = 'moderator'
-        ADMIN = 'admin'
+        USER = 'user', '0'
+        MODERATOR = 'moderator', '1'
+        ADMIN = 'admin', '2'
 
     email = models.EmailField(
         'email',
@@ -38,9 +38,12 @@ class User(AbstractUser):
         max_length=10,
     )
 
+    def permission_level(self) -> int:
+        return int(self.get_role_display())
+
 
 class Genre(models.Model):
-    '''Класс, описывающий жанр'''
+    """Класс, описывающий жанр."""
     name = models.TextField(
         'Название',
         default='Название жанра'
@@ -56,7 +59,7 @@ class Genre(models.Model):
 
 
 class Category(models.Model):
-    '''Класс, описывающий категорию'''
+    """Класс, описывающий категорию"""
     name = models.TextField(
         'Название',
         default='Название категории'
@@ -71,7 +74,7 @@ class Category(models.Model):
 
 
 class Title(models.Model):
-    '''Класс, описывающий произведение'''
+    """Класс, описывающий произведение."""
     name = models.TextField(
         'Название',
         default='Название произведения'
@@ -105,7 +108,7 @@ class Title(models.Model):
 
 
 class Review(models.Model):
-    '''Класс, описывающий отзывы'''
+    """Класс, описывающий отзывы."""
     title = models.ForeignKey(
         Title,
         on_delete=models.CASCADE,
@@ -130,7 +133,7 @@ class Review(models.Model):
 
 
 class Comment(models.Model):
-    '''Класс, описывающий комментарии'''
+    """Класс, описывающий комментарии."""
     review = models.ForeignKey(
         Review,
         on_delete=models.CASCADE,
