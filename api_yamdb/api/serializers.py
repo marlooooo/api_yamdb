@@ -1,5 +1,5 @@
-# from django.apps import apps
-from django.conf import settings
+from django.apps import apps
+# from django.conf import settings
 
 from rest_framework import serializers
 from rest_framework.validators import UniqueTogetherValidator
@@ -9,7 +9,7 @@ from reviews import models
 # Доступ к моделям через apps.get_model(app_label='review', model_name='User')
 
 
-User = settings.AUTH_USER_MODEL
+User = apps.get_model(app_label='reviews', model_name='User')
 
 
 class UserCreationSerializer(serializers.ModelSerializer):
@@ -49,11 +49,51 @@ class UserSerializer(serializers.ModelSerializer):
             'bio',
             'role',
         )
+        validators = [
+            UniqueTogetherValidator(
+                queryset=User.objects.all(),
+                fields=(
+                    'username',
+                    'email',
+                ),
+            ),
+        ]
+
+    def validate_username(self, value):
+        if 'me' == value.lower():
+            raise serializers.ValidationError(
+                f'Имя пользователя не может быть me.'
+            )
+        return value
 
 
-class JwtTokenSerializer(serializers.ModelSerializer):
+class UserAdminSerializer(serializers.ModelSerializer):
     class Meta:
-        fields = ('username', 'conformation_code')
+        model = User
+        fields = (
+            'username',
+            'email',
+            'first_name',
+            'last_name',
+            'bio',
+            'role',
+        )
+        validators = [
+            UniqueTogetherValidator(
+                queryset=User.objects.all(),
+                fields=(
+                    'username',
+                    'email',
+                ),
+            ),
+        ]
+
+    def validate_username(self, value):
+        if value.lower() == 'me':
+            raise serializers.ValidationError(
+                'Имя пользователя не может быть me.'
+            )
+        return value
 
 
 class ReviewSerializer(serializers.ModelSerializer):

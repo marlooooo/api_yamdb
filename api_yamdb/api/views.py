@@ -1,8 +1,29 @@
 from django.shortcuts import get_object_or_404
-from rest_framework import viewsets
+from rest_framework import viewsets, pagination, filters
+from django.apps import apps
 
 from . import serializers
 from reviews import models
+from . import serializers
+from .permissions import AdminOrReadOnly
+
+User = apps.get_model(app_label='reviews', model_name='User')
+
+
+class UserViewSet(viewsets.ModelViewSet):
+    permission_classes = (
+        AdminOrReadOnly,
+    )
+    pagination_class = pagination.LimitOffsetPagination
+    serializer_class = serializers.UserAdminSerializer
+    filter_backends = (
+        filters.SearchFilter,
+    )
+    search_fields = (
+        'username',
+        'email',
+    )
+    queryset = User.objects.all()
 
 
 class ReviewViewSet(viewsets.ModelViewSet):
