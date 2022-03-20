@@ -59,7 +59,8 @@ class Genre(models.Model):
     )
     slug = models.SlugField(
         'id жанра',
-        unique=True
+        unique=True,
+        db_index=True
     )
 
     def __str__(self):
@@ -74,7 +75,8 @@ class Category(models.Model):
     )
     slug = models.SlugField(
         'id категории',
-        unique=True
+        unique=True,
+        db_index=True
     )
 
     def __str__(self):

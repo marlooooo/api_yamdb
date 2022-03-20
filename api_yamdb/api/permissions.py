@@ -18,7 +18,14 @@ class ModeratorOrReadOnly(BasePermission):
         )
 
 
-class AdminOrReadOnly(ModeratorOrReadOnly):
+class AdminOrReadOnly(BasePermission):
     """Доступ только от админа и выше."""
     # Не уверен в том, что это будет работать правильно
-    MIN_PERMISSION_CLASS = 2
+
+    def has_permission(self, request, view):
+        return (
+            request.method in SAFE_METHODS or
+            (request.user.is_authenticated and
+             (request.user.is_staff or request.user.role == 'admin')
+             )
+        )
