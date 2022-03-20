@@ -111,3 +111,17 @@ class ReviewSerializer(serializers.ModelSerializer):
 
 class CommentSerializer(serializers.ModelSerializer):
     pass
+
+
+class GenreSerializer(serializers.ModelSerializer):
+    """Сериализатор для жанра"""
+    class Meta:
+        fields = ('name', 'slug')
+        model = models.Genre
+
+
+class CategorySerializer(serializers.ModelSerializer):
+    """Сериализатор для категории"""
+    class Meta:
+        fields = ('name', 'slug')
+        model = models.Category

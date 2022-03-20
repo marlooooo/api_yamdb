@@ -53,11 +53,19 @@ class CommentViewSet(viewsets.ModelViewSet):
 class GenreViewSet(viewsets.ModelViewSet):
     permission_classes = (AdminOrReadOnly,)
     queryset = models.Genre.objects.all()
+    serializer_class = serializers.GenreSerializer
+    filter_backends = (filters.SearchFilter,)
+    lookup_field = 'slug'
+    search_fields = ('name',)
 
 
 class CategoryViewSet(viewsets.ModelViewSet):
     permission_classes = (AdminOrReadOnly,)
     queryset = models.Category.objects.all()
+    serializer_class = serializers.CategorySerializer
+    filter_backends = (filters.SearchFilter,)
+    lookup_field = 'slug'
+    search_fields = ('name',)
 
 
 class TitleViewSet(viewsets.ModelViewSet):
