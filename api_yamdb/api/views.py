@@ -1,6 +1,8 @@
 from django.apps import apps
 from django.shortcuts import get_object_or_404
 from rest_framework import viewsets, pagination, filters
+from rest_framework.mixins import ListModelMixin, CreateModelMixin, DestroyModelMixin
+
 
 from reviews import models
 from . import serializers
@@ -50,7 +52,8 @@ class CommentViewSet(viewsets.ModelViewSet):
         return queryset
 
 
-class GenreViewSet(viewsets.ModelViewSet):
+class GenreViewSet(viewsets.GenericViewSet, ListModelMixin, CreateModelMixin, DestroyModelMixin):
+    """Вьюсет для жанров"""
     permission_classes = (AdminOrReadOnly,)
     queryset = models.Genre.objects.all()
     serializer_class = serializers.GenreSerializer
@@ -59,7 +62,8 @@ class GenreViewSet(viewsets.ModelViewSet):
     search_fields = ('name',)
 
 
-class CategoryViewSet(viewsets.ModelViewSet):
+class CategoryViewSet(viewsets.GenericViewSet, ListModelMixin, CreateModelMixin, DestroyModelMixin):
+    """Вьюсет для категорий"""
     permission_classes = (AdminOrReadOnly,)
     queryset = models.Category.objects.all()
     serializer_class = serializers.CategorySerializer
@@ -69,6 +73,7 @@ class CategoryViewSet(viewsets.ModelViewSet):
 
 
 class TitleViewSet(viewsets.ModelViewSet):
+    """Вьюсет для тайтлов"""
     permission_classes = (AdminOrReadOnly,)
     queryset = models.Title.objects.all()
 
