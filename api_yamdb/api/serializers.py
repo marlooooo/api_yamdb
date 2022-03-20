@@ -1,14 +1,41 @@
-# from django.apps import apps
-from django.conf import settings
+from django.apps import apps
+# from django.conf import settings
 
 from rest_framework import serializers
+from rest_framework.validators import UniqueTogetherValidator
 
 from reviews import models
 
 # Доступ к моделям через apps.get_model(app_label='review', model_name='User')
 
 
-User = settings.AUTH_USER_MODEL
+User = apps.get_model(app_label='reviews', model_name='User')
+
+
+class UserCreationSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = User
+        fields = (
+            'username',
+            'email',
+        )
+        validators = [
+            UniqueTogetherValidator(
+                queryset=User.objects.all(),
+                fields=(
+                    'username',
+                    'email',
+                ),
+            ),
+        ]
+
+    def validate_username(self, value):
+        """Проверяет правильность содержания поля username."""
+        if 'me' == value.lower():
+            raise serializers.ValidationError(
+                f'Имя пользователя не может быть "{value.lower()}".'
+            )
+        return value
 
 
 class UserSerializer(serializers.ModelSerializer):
@@ -22,6 +49,51 @@ class UserSerializer(serializers.ModelSerializer):
             'bio',
             'role',
         )
+        validators = [
+            UniqueTogetherValidator(
+                queryset=User.objects.all(),
+                fields=(
+                    'username',
+                    'email',
+                ),
+            ),
+        ]
+
+    def validate_username(self, value):
+        if 'me' == value.lower():
+            raise serializers.ValidationError(
+                f'Имя пользователя не может быть me.'
+            )
+        return value
+
+
+class UserAdminSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = User
+        fields = (
+            'username',
+            'email',
+            'first_name',
+            'last_name',
+            'bio',
+            'role',
+        )
+        validators = [
+            UniqueTogetherValidator(
+                queryset=User.objects.all(),
+                fields=(
+                    'username',
+                    'email',
+                ),
+            ),
+        ]
+
+    def validate_username(self, value):
+        if value.lower() == 'me':
+            raise serializers.ValidationError(
+                'Имя пользователя не может быть me.'
+            )
+        return value
 
 
 class TitleSerializer(serializers.ModelSerializer):
@@ -65,3 +137,17 @@ class ReviewSerializer(serializers.ModelSerializer):
 
 class CommentSerializer(serializers.ModelSerializer):
     pass
+
+
+class GenreSerializer(serializers.ModelSerializer):
+    """Сериализатор для жанра"""
+    class Meta:
+        fields = ('name', 'slug')
+        model = models.Genre
+
+
+class CategorySerializer(serializers.ModelSerializer):
+    """Сериализатор для категории"""
+    class Meta:
+        fields = ('name', 'slug')
+        model = models.Category

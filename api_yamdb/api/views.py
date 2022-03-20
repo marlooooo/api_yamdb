@@ -1,8 +1,30 @@
+from django.apps import apps
 from django.shortcuts import get_object_or_404
-from rest_framework import viewsets
+from rest_framework import viewsets, pagination, filters
+from rest_framework.mixins import ListModelMixin, CreateModelMixin, DestroyModelMixin
 
-from . import serializers
+
 from reviews import models
+from . import serializers
+from .permissions import AdminOrReadOnly
+
+User = apps.get_model(app_label='reviews', model_name='User')
+
+
+class UserViewSet(viewsets.ModelViewSet):
+    permission_classes = (
+        AdminOrReadOnly,
+    )
+    pagination_class = pagination.LimitOffsetPagination
+    serializer_class = serializers.UserAdminSerializer
+    filter_backends = (
+        filters.SearchFilter,
+    )
+    search_fields = (
+        'username',
+        'email',
+    )
+    queryset = User.objects.all()
 
 
 class TitleViewSet(viewsets.ModelViewSet):
@@ -43,3 +65,30 @@ class CommentViewSet(viewsets.ModelViewSet):
                                    id=self.kwargs.get('review_id'))
         queryset = models.Comment.objects.filter(review=review)
         return queryset
+
+
+class GenreViewSet(viewsets.GenericViewSet, ListModelMixin, CreateModelMixin, DestroyModelMixin):
+    """Вьюсет для жанров"""
+    permission_classes = (AdminOrReadOnly,)
+    queryset = models.Genre.objects.all()
+    serializer_class = serializers.GenreSerializer
+    filter_backends = (filters.SearchFilter,)
+    lookup_field = 'slug'
+    search_fields = ('name',)
+
+
+class CategoryViewSet(viewsets.GenericViewSet, ListModelMixin, CreateModelMixin, DestroyModelMixin):
+    """Вьюсет для категорий"""
+    permission_classes = (AdminOrReadOnly,)
+    queryset = models.Category.objects.all()
+    serializer_class = serializers.CategorySerializer
+    filter_backends = (filters.SearchFilter,)
+    lookup_field = 'slug'
+    search_fields = ('name',)
+
+
+class TitleViewSet(viewsets.ModelViewSet):
+    """Вьюсет для тайтлов"""
+    permission_classes = (AdminOrReadOnly,)
+    queryset = models.Title.objects.all()
+

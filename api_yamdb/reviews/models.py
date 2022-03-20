@@ -1,20 +1,21 @@
-from django.db import models
+from datetime import datetime
+
 from django.contrib.auth.models import AbstractUser
 from django.core.validators import MaxValueValidator, MinValueValidator
-
-from datetime import datetime
+from django.db import models
 
 
 class User(AbstractUser):
     """Класс, описывающий стандартного пользователя."""
     class Role(models.TextChoices):
-        USER = 'user'
-        MODERATOR = 'moderator'
-        ADMIN = 'admin'
+        USER = 'user', '0'
+        MODERATOR = 'moderator', '1'
+        ADMIN = 'admin', '2'
 
     email = models.EmailField(
         'email',
         max_length=254,
+        unique=True
     )
     first_name = models.CharField(
         'first name',
@@ -38,8 +39,20 @@ class User(AbstractUser):
         max_length=10,
     )
 
+    class Meta:
+        constraints = [
+            models.constraints.UniqueConstraint(
+                fields=('username', 'email'),
+                name='user_email_constraint'
+            )
+        ]
+
+    def permission_level(self) -> int:
+        return int(self.get_role_display())
+
 
 class Genre(models.Model):
+<<<<<<< HEAD
     '''Класс, описывающий жанр'''
     name = models.CharField(
         max_length=256,
@@ -52,10 +65,41 @@ class Category(models.Model):
     '''Класс, описывающий категорию'''
     name = models.TextField(default='no-category')
     slug = models.SlugField(unique=True, default='nocategory')
+=======
+    """Класс, описывающий жанр."""
+    name = models.TextField(
+        'Название',
+        default='Название жанра'
+    )
+    slug = models.SlugField(
+        'id жанра',
+        unique=True,
+        db_index=True
+    )
+
+    def __str__(self):
+        return self.name
+
+
+class Category(models.Model):
+    """Класс, описывающий категорию"""
+    name = models.TextField(
+        'Название',
+        default='Название категории'
+    )
+    slug = models.SlugField(
+        'id категории',
+        unique=True,
+        db_index=True
+    )
+
+    def __str__(self):
+        return self.name
+>>>>>>> 9b1b65915c8f36cd03879036a005d3755150d3eb
 
 
 class Title(models.Model):
-    '''Класс, описывающий произведение'''
+    """Класс, описывающий произведение."""
     name = models.TextField(
         'Название',
         default='Название произведения'
@@ -89,7 +133,7 @@ class Title(models.Model):
 
 
 class Review(models.Model):
-    '''Класс, описывающий отзывы'''
+    """Класс, описывающий отзывы."""
     title = models.ForeignKey(
         Title,
         on_delete=models.CASCADE,
@@ -114,7 +158,7 @@ class Review(models.Model):
 
 
 class Comment(models.Model):
-    '''Класс, описывающий комментарии'''
+    """Класс, описывающий комментарии."""
     review = models.ForeignKey(
         Review,
         on_delete=models.CASCADE,
