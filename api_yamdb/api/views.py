@@ -5,6 +5,21 @@ from . import serializers
 from reviews import models
 
 
+class TitleViewSet(viewsets.ModelViewSet):
+    queryset = models.Title.objects.all()
+    serializer_class = serializers.TitleSerializer
+
+
+class GenreViewSet(viewsets.ModelViewSet):
+    queryset = models.Genre.objects.all()
+    serializer_class = serializers.GenreSeiralizer
+
+
+class CategoryViewSet(viewsets.ModelViewSet):
+    queryset = models.Category.objects.all()
+    serializer_class = serializers.CategorySerializer
+
+
 class ReviewViewSet(viewsets.ModelViewSet):
     serializer_class = serializers.ReviewSerializer
 
