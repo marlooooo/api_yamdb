@@ -22,3 +22,4 @@ class AdminOrReadOnly(ModeratorOrReadOnly):
     """Доступ только от админа и выше."""
     # Не уверен в том, что это будет работать правильно
     MIN_PERMISSION_CLASS = 2
+

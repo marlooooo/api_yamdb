@@ -48,3 +48,19 @@ class CommentViewSet(viewsets.ModelViewSet):
                                    id=self.kwargs.get('review_id'))
         queryset = models.Comment.objects.filter(review=review)
         return queryset
+
+
+class GenreViewSet(viewsets.ModelViewSet):
+    permission_classes = (AdminOrReadOnly,)
+    queryset = models.Genre.objects.all()
+
+
+class CategoryViewSet(viewsets.ModelViewSet):
+    permission_classes = (AdminOrReadOnly,)
+    queryset = models.Category.objects.all()
+
+
+class TitleViewSet(viewsets.ModelViewSet):
+    permission_classes = (AdminOrReadOnly,)
+    queryset = models.Title.objects.all()
+

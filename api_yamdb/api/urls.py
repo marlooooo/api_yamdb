@@ -15,6 +15,24 @@ router_v1.register(
     'comments'
 )
 
+router_v1.register(
+    'categories',
+    views.CategoryViewSet,
+    'categories',
+)
+
+router_v1.register(
+    'genres',
+    views.GenreViewSet,
+    'genres',
+)
+
+router_v1.register(
+    'titles',
+    views.TitleViewSet,
+    'titles',
+)
+
 urlpatterns = [
     path('v1/', include(router_v1.urls)),
 ]
