@@ -41,10 +41,17 @@ class User(AbstractUser):
 
 class Genre(models.Model):
     '''Класс, описывающий жанр'''
+    name = models.CharField(
+        max_length=256,
+        default='no-genre'
+    )
+    slug = models.SlugField(max_length=50, unique=True, default='nogenre')
 
 
 class Category(models.Model):
     '''Класс, описывающий категорию'''
+    name = models.TextField(default='no-category')
+    slug = models.SlugField(unique=True, default='nocategory')
 
 
 class Title(models.Model):
@@ -68,7 +75,7 @@ class Title(models.Model):
     genre = models.ManyToManyField(
         Genre,
         blank=True,
-        null=True
+        null=True,
     )
     category = models.ForeignKey(
         Category,
