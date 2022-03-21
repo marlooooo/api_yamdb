@@ -1,6 +1,5 @@
 from django.apps import apps
 from django.shortcuts import get_object_or_404
-from django.db.models import Avg
 from rest_framework import viewsets, pagination, filters
 from rest_framework.mixins import ListModelMixin, CreateModelMixin, DestroyModelMixin
 from django_filters.rest_framework import DjangoFilterBackend
@@ -79,10 +78,15 @@ class TitleViewSet(viewsets.ModelViewSet):
     """Вьюсет для тайтлов"""
     permission_classes = (AdminOrReadOnly,)
     queryset = models.Title.objects.all()
+<<<<<<< HEAD
     filter_backends = (DjangoFilterBackend, )
     filterset_class = TitleFilter
     #filterset_fields = ('=genre__slug', )
     # filters = (TitleFilter,)
+=======
+    filter_backends = [DjangoFilterBackend]
+    filterset_class = TitleFilter
+>>>>>>> 3a172affb8f288737825eee3a250fcb31de1f400
 
     def get_serializer_class(self):
         if self.request.method == 'GET':
