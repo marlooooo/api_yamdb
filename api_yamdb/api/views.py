@@ -7,7 +7,7 @@ from django_filters.rest_framework import DjangoFilterBackend
 
 from reviews import models
 from . import serializers
-from .permissions import AdminOrReadOnly
+from .permissions import AdminOrReadOnly, OwnerOrReadOnly
 from .filters import TitleFilter
 
 User = apps.get_model(app_label='reviews', model_name='User')
@@ -27,31 +27,6 @@ class UserViewSet(viewsets.ModelViewSet):
         'email',
     )
     queryset = User.objects.all()
-
-
-class ReviewViewSet(viewsets.ModelViewSet):
-    serializer_class = serializers.ReviewSerializer
-
-    def get_queryset(self):
-        title = get_object_or_404(models.Title, id=self.kwargs.get('title_id'))
-        queryset = models.Review.objects.filter(title=title)
-        return queryset
-
-    def perform_create(self, serializer):
-        serializer.save(
-            author=self.request.user,
-            title=models.Title.objects.get(id=self.kwargs.get('title_id'))
-        )
-
-
-class CommentViewSet(viewsets.ModelViewSet):
-    serializer_class = serializers.CommentSerializer
-
-    def get_queryset(self):
-        review = get_object_or_404(models.Review,
-                                   id=self.kwargs.get('review_id'))
-        queryset = models.Comment.objects.filter(review=review)
-        return queryset
 
 
 class GenreViewSet(viewsets.GenericViewSet, ListModelMixin, CreateModelMixin, DestroyModelMixin):
@@ -78,17 +53,46 @@ class TitleViewSet(viewsets.ModelViewSet):
     """Вьюсет для тайтлов"""
     permission_classes = (AdminOrReadOnly,)
     queryset = models.Title.objects.all()
-<<<<<<< HEAD
-    filter_backends = (DjangoFilterBackend, )
-    filterset_class = TitleFilter
-    #filterset_fields = ('=genre__slug', )
-    # filters = (TitleFilter,)
-=======
     filter_backends = [DjangoFilterBackend]
     filterset_class = TitleFilter
->>>>>>> 3a172affb8f288737825eee3a250fcb31de1f400
 
     def get_serializer_class(self):
         if self.request.method == 'GET':
             return serializers.TitleReadOnlySerializer
         return serializers.TitleEditSerializer
+
+
+class ReviewViewSet(viewsets.ModelViewSet):
+    """Вьюсет для ревью"""
+    permission_classes = (OwnerOrReadOnly,)
+    serializer_class = serializers.ReviewSerializer
+    pagination_class = None
+
+    def get_queryset(self):
+        title = get_object_or_404(models.Title, id=self.kwargs.get('title_id'))
+        queryset = models.Review.objects.filter(title=title)
+        return queryset
+
+    def perform_create(self, serializer):
+        serializer.save(
+            author=self.request.user,
+            title=models.Title.objects.get(id=self.kwargs.get('title_id'))
+        )
+
+
+class CommentViewSet(viewsets.ModelViewSet):
+    permission_classes = (OwnerOrReadOnly,)
+    serializer_class = serializers.CommentSerializer
+    pagination_class = None
+
+    def get_queryset(self):
+        review = get_object_or_404(models.Review,
+                                   id=self.kwargs.get('review_id'))
+        queryset = models.Comment.objects.filter(review=review)
+        return queryset
+
+    def perform_create(self, serializer):
+        serializer.save(
+            author=self.request.user,
+            review=models.Review.objects.get(id=self.kwargs.get('review_id'))
+        )
