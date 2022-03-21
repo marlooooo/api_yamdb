@@ -63,6 +63,9 @@ class Genre(models.Model):
         db_index=True
     )
 
+    class Meta:
+        ordering = ['-slug']
+
     def __str__(self):
         return self.name
 
@@ -78,6 +81,9 @@ class Category(models.Model):
         unique=True,
         db_index=True
     )
+
+    class Meta:
+        ordering = ['-slug']
 
     def __str__(self):
         return self.name
@@ -95,7 +101,6 @@ class Title(models.Model):
         blank=True,
         null=True,
     )
-    # rating =
     description = models.TextField(
         'Описание',
         blank=True,
@@ -112,6 +117,9 @@ class Title(models.Model):
         blank=True,
         null=True
     )
+
+    class Meta:
+        ordering = ['-name']
 
     def __str__(self):
         return self.name
