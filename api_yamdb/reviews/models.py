@@ -52,20 +52,6 @@ class User(AbstractUser):
 
 
 class Genre(models.Model):
-<<<<<<< HEAD
-    '''Класс, описывающий жанр'''
-    name = models.CharField(
-        max_length=256,
-        default='no-genre'
-    )
-    slug = models.SlugField(max_length=50, unique=True, default='nogenre')
-
-
-class Category(models.Model):
-    '''Класс, описывающий категорию'''
-    name = models.TextField(default='no-category')
-    slug = models.SlugField(unique=True, default='nocategory')
-=======
     """Класс, описывающий жанр."""
     name = models.TextField(
         'Название',
@@ -95,14 +81,13 @@ class Category(models.Model):
 
     def __str__(self):
         return self.name
->>>>>>> 9b1b65915c8f36cd03879036a005d3755150d3eb
 
 
 class Title(models.Model):
     """Класс, описывающий произведение."""
     name = models.TextField(
         'Название',
-        default='Название произведения'
+        default='Название произведения',
     )
     year = models.IntegerField(
         'Год выпуска',
@@ -114,18 +99,20 @@ class Title(models.Model):
     description = models.TextField(
         'Описание',
         blank=True,
-        null=True
+        null=True,
     )
     genre = models.ManyToManyField(
         Genre,
         blank=True,
-        null=True,
+        # null=True,
+        related_name='titles'
     )
     category = models.ForeignKey(
         Category,
         on_delete=models.SET_NULL,
         blank=True,
-        null=True
+        null=True,
+        related_name='titles'
     )
 
     def __str__(self):
@@ -137,7 +124,7 @@ class Review(models.Model):
     title = models.ForeignKey(
         Title,
         on_delete=models.CASCADE,
-        related_name='reviews',
+        related_name='reviewses',
     )
     text = models.TextField('Текст отзыва',)
     author = models.ForeignKey(

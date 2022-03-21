@@ -98,10 +98,13 @@ class UserAdminSerializer(serializers.ModelSerializer):
 
 class TitleSerializer(serializers.ModelSerializer):
     description = serializers.CharField(required=False)
-    genre = serializers.PrimaryKeyRelatedField(
+    genre = serializers.SlugRelatedField(
+        slug_field='slug',
         queryset=models.Genre.objects.all(),
+        many=True,
     )
-    category = serializers.PrimaryKeyRelatedField(
+    category = serializers.SlugRelatedField(
+        slug_field='slug',
         queryset=models.Category.objects.all(),
     )
 

@@ -27,21 +27,6 @@ class UserViewSet(viewsets.ModelViewSet):
     queryset = User.objects.all()
 
 
-class TitleViewSet(viewsets.ModelViewSet):
-    queryset = models.Title.objects.all()
-    serializer_class = serializers.TitleSerializer
-
-
-class GenreViewSet(viewsets.ModelViewSet):
-    queryset = models.Genre.objects.all()
-    serializer_class = serializers.GenreSeiralizer
-
-
-class CategoryViewSet(viewsets.ModelViewSet):
-    queryset = models.Category.objects.all()
-    serializer_class = serializers.CategorySerializer
-
-
 class ReviewViewSet(viewsets.ModelViewSet):
     serializer_class = serializers.ReviewSerializer
 
@@ -91,4 +76,4 @@ class TitleViewSet(viewsets.ModelViewSet):
     """Вьюсет для тайтлов"""
     permission_classes = (AdminOrReadOnly,)
     queryset = models.Title.objects.all()
-
+    serializer_class = serializers.TitleSerializer
