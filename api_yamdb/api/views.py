@@ -80,7 +80,9 @@ class TitleViewSet(viewsets.ModelViewSet):
     permission_classes = (AdminOrReadOnly,)
     queryset = models.Title.objects.all()
     filter_backends = (DjangoFilterBackend, )
-    filters = TitleFilter
+    filterset_class = TitleFilter
+    #filterset_fields = ('=genre__slug', )
+    # filters = (TitleFilter,)
 
     def get_serializer_class(self):
         if self.request.method == 'GET':
