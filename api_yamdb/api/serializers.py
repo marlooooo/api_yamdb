@@ -125,3 +125,24 @@ class CategorySerializer(serializers.ModelSerializer):
     class Meta:
         fields = ('name', 'slug')
         model = models.Category
+
+
+class TitleReadOnlySerializer(serializers.ModelSerializer):
+    """Сериализатор для тайтлов на чтение"""
+    category = CategorySerializer(read_only=True)
+    genre = GenreSerializer(read_only=True, many=True)
+    rating = serializers.IntegerField(read_only=True)
+
+    class Meta:
+        fields = '__all__'
+        model = models.Title
+
+
+class TitleEditSerializer(serializers.ModelSerializer):
+    """Сериализатор для тайтлов на запись"""
+    category = serializers.SlugRelatedField(queryset=models.Category.objects.all(), slug_field='slug')
+    genre = serializers.SlugRelatedField(queryset=models.Genre.objects.all(), slug_field='slug', many=True)
+
+    class Meta:
+        fields = '__all__'
+        model = models.Title
