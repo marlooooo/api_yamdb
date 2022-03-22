@@ -147,6 +147,7 @@ class Review(models.Model):
 
     class Meta:
         unique_together = ('title', 'author')
+        ordering = ('id',)
 
     def __str__(self):
         return f'Отзыв на {self.title} от {self.author}'
@@ -167,3 +168,6 @@ class Comment(models.Model):
     )
     pub_date = models.DateTimeField('Дата и время публикации',
                                     auto_now_add=True)
+
+    class Meta:
+        ordering = ('id',)

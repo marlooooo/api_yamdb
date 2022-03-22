@@ -1,7 +1,9 @@
 from django.apps import apps
 from django.shortcuts import get_object_or_404
 from rest_framework import viewsets, pagination, filters
-from rest_framework.mixins import ListModelMixin, CreateModelMixin, DestroyModelMixin
+from rest_framework.mixins import (ListModelMixin, CreateModelMixin,
+                                   DestroyModelMixin)
+from rest_framework.serializers import ValidationError
 from django_filters.rest_framework import DjangoFilterBackend
 
 
@@ -29,7 +31,8 @@ class UserViewSet(viewsets.ModelViewSet):
     queryset = User.objects.all()
 
 
-class GenreViewSet(viewsets.GenericViewSet, ListModelMixin, CreateModelMixin, DestroyModelMixin):
+class GenreViewSet(viewsets.GenericViewSet, ListModelMixin, CreateModelMixin,
+                   DestroyModelMixin):
     """Вьюсет для жанров"""
     permission_classes = (AdminOrReadOnly,)
     queryset = models.Genre.objects.all()
@@ -39,7 +42,8 @@ class GenreViewSet(viewsets.GenericViewSet, ListModelMixin, CreateModelMixin, De
     search_fields = ('name',)
 
 
-class CategoryViewSet(viewsets.GenericViewSet, ListModelMixin, CreateModelMixin, DestroyModelMixin):
+class CategoryViewSet(viewsets.GenericViewSet, ListModelMixin,
+                      CreateModelMixin, DestroyModelMixin):
     """Вьюсет для категорий"""
     permission_classes = (AdminOrReadOnly,)
     queryset = models.Category.objects.all()
@@ -66,7 +70,7 @@ class ReviewViewSet(viewsets.ModelViewSet):
     """Вьюсет для ревью"""
     permission_classes = (OwnerOrReadOnly,)
     serializer_class = serializers.ReviewSerializer
-    pagination_class = None
+    lookup_field = 'id'
 
     def get_queryset(self):
         title = get_object_or_404(models.Title, id=self.kwargs.get('title_id'))
@@ -74,16 +78,20 @@ class ReviewViewSet(viewsets.ModelViewSet):
         return queryset
 
     def perform_create(self, serializer):
-        serializer.save(
-            author=self.request.user,
-            title=models.Title.objects.get(id=self.kwargs.get('title_id'))
-        )
+        author = self.request.user
+        title = get_object_or_404(models.Title, id=self.kwargs.get('title_id'))
+        if (models.Review.objects.filter(author=author, title=title).exists()):
+            raise ValidationError('Только один отзыв на произведение')
+        else:
+            serializer.save(
+                author=author,
+                title=title
+            )
 
 
 class CommentViewSet(viewsets.ModelViewSet):
     permission_classes = (OwnerOrReadOnly,)
     serializer_class = serializers.CommentSerializer
-    pagination_class = None
 
     def get_queryset(self):
         review = get_object_or_404(models.Review,
@@ -94,5 +102,5 @@ class CommentViewSet(viewsets.ModelViewSet):
     def perform_create(self, serializer):
         serializer.save(
             author=self.request.user,
-            review=models.Review.objects.get(id=self.kwargs.get('review_id'))
+            # review=models.Review.objects.get(id=self.kwargs.get('review_id'))
         )
