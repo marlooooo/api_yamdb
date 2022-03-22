@@ -24,17 +24,7 @@ class UserViewSet(viewsets.ModelViewSet):
     filter_backends = (filters.SearchFilter,)
     search_fields = ('username',)
     queryset = User.objects.all()
-    serializer_class = serializers.UserSerializer       # потом закомментировать и использовать get_serializer
-
-    def get_object(self):
-        queryset = self.get_queryset()
-        filter = {}
-        for field in self.multiple_lookup_fields:
-            filter[field] = self.kwargs[field]
-
-        obj = get_object_or_404(queryset, **filter)
-        self.check_object_permissions(self.request, obj)
-        return obj
+    serializer_class = serializers.UserSerializer       # потом закомментировать и использовать get_serializer_class
 
     # def get_serializer_class(self):
     #     if (
@@ -48,6 +38,18 @@ class UserViewSet(viewsets.ModelViewSet):
     def retrieve(self, request, *args, **kwargs):
         user = get_object_or_404(User, username=kwargs.get('pk'))
         return Response(self.serializer_class(user).data)
+
+    def update(self, request, *args, **kwargs):
+        partial = kwargs.pop('partial', False)
+        instance = get_object_or_404(User, kwargs.get('pk'))
+        serializer = self.get_serializer(
+            instance,
+            data=request.data,
+            partial=partial,
+        )
+        serializer.is_valid(raise_exception=True)
+        self.perform_update(serializer)
+        return Response(serializer.data)
 
     @action(
         url_path='me',
