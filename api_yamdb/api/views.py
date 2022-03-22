@@ -100,7 +100,7 @@ class CommentViewSet(viewsets.ModelViewSet):
         return queryset
 
     def perform_create(self, serializer):
-        author=self.request.user
+        author = self.request.user
         review = get_object_or_404(models.Review,
                                    id=self.kwargs.get('review_id'))
         serializer.save(
