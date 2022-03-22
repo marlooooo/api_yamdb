@@ -20,8 +20,6 @@ class ModeratorOrReadOnly(BasePermission):
 
 class AdminOrReadOnly(BasePermission):
     """Доступ только от админа и выше."""
-    # Не уверен в том, что это будет работать правильно
-
     def has_permission(self, request, view):
         return (
             request.method in SAFE_METHODS or

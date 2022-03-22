@@ -33,6 +33,12 @@ router_v1.register(
     views.CommentViewSet,
     'comments'
 )
+router_v1.register(
+    r'users',
+    views.UserViewSet,
+    basename='users'
+)
+
 
 urlpatterns = [
     path('v1/', include(router_v1.urls)),

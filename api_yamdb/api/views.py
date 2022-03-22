@@ -1,32 +1,72 @@
 from django.apps import apps
 from django.shortcuts import get_object_or_404
-from rest_framework import viewsets, pagination, filters
-from rest_framework.mixins import ListModelMixin, CreateModelMixin, DestroyModelMixin
 from django_filters.rest_framework import DjangoFilterBackend
-
+from rest_framework import viewsets, pagination, filters
+from rest_framework.decorators import action
+from rest_framework.mixins import ListModelMixin, CreateModelMixin, \
+    DestroyModelMixin
+from rest_framework.permissions import IsAuthenticated, AllowAny
+from rest_framework.response import Response
+from rest_framework_simplejwt.tokens import AccessToken
 
 from reviews import models
 from . import serializers
-from .permissions import AdminOrReadOnly
 from .filters import TitleFilter
+from .permissions import AdminOrReadOnly
+from .mixins import CreateMixin
 
 User = apps.get_model(app_label='reviews', model_name='User')
 
 
 class UserViewSet(viewsets.ModelViewSet):
-    permission_classes = (
-        AdminOrReadOnly,
-    )
-    pagination_class = pagination.LimitOffsetPagination
-    serializer_class = serializers.UserAdminSerializer
-    filter_backends = (
-        filters.SearchFilter,
-    )
-    search_fields = (
-        'username',
-        'email',
-    )
+    permission_classes = (AdminOrReadOnly, AllowAny)    # удалить AllowAny
+    pagination_class = pagination.PageNumberPagination  # xz
+    filter_backends = (filters.SearchFilter,)
+    search_fields = ('username',)
     queryset = User.objects.all()
+    serializer_class = serializers.UserSerializer       # потом закомментировать и использовать get_serializer
+
+    def get_object(self):
+        queryset = self.get_queryset()
+        filter = {}
+        for field in self.multiple_lookup_fields:
+            filter[field] = self.kwargs[field]
+
+        obj = get_object_or_404(queryset, **filter)
+        self.check_object_permissions(self.request, obj)
+        return obj
+
+    # def get_serializer_class(self):
+    #     if (
+    #         self.request.user.is_superuser or
+    #         self.request.user.is_staff or
+    #         self.request.user.permission_level() == 2
+    #     ):
+    #         return serializers.UserSerializer
+    #     return serializers.UserCreationSerializer
+
+    def retrieve(self, request, *args, **kwargs):
+        user = get_object_or_404(User, username=kwargs.get('pk'))
+        return Response(self.serializer_class(user).data)
+
+    @action(
+        url_path='me',
+        detail=True,
+        methods=['GET', 'PATCH'],
+        permission_classes=[IsAuthenticated],
+    )
+    def me(self, request):
+        serializer = self.get_serializer(request.user, many=False)
+        return Response(serializer.data)
+
+
+class UserCreationAccessTokenObtainView(CreateMixin):
+    queryset = User.objects.all()
+    serializer_class = serializers.UserCreationSerializer
+
+    def perform_create(self, serializer):
+        user = self.request.data.get('username')
+        token = AccessToken.for_user(user)
 
 
 class ReviewViewSet(viewsets.ModelViewSet):
