@@ -44,8 +44,14 @@ router_v1.register(
     views.UserViewSet,
     basename='users'
 )
+router_v1.register(
+    r'auth/signup',
+    views.UserCreationViewSet,
+    basename='user_creation'
+)
 
 
 urlpatterns = [
     path('v1/', include(router_v1.urls)),
+    # path('v1/auth/token', views.TokenObtainView.as_view()),
 ]

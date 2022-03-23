@@ -1,47 +1,38 @@
 from django.apps import apps
-from django.shortcuts import get_object_or_404
-from django.core.mail import send_mail
 from django.conf import settings as cfg
-from rest_framework import viewsets, pagination, filters
-from rest_framework.mixins import (ListModelMixin, CreateModelMixin,
-                                   DestroyModelMixin)
-from rest_framework.serializers import ValidationError
+from django.core.mail import send_mail
+from django.shortcuts import get_object_or_404
 from django_filters.rest_framework import DjangoFilterBackend
-from rest_framework import viewsets, pagination, filters
+from rest_framework import viewsets, pagination, filters, status
+from rest_framework.authtoken.models import Token
 from rest_framework.decorators import action
-from rest_framework.mixins import ListModelMixin, CreateModelMixin, \
-    DestroyModelMixin
-from rest_framework.permissions import IsAuthenticated
+from rest_framework.mixins import (
+    ListModelMixin, CreateModelMixin, DestroyModelMixin
+)
+from rest_framework.permissions import IsAuthenticated, AllowAny
 from rest_framework.response import Response
+from rest_framework.serializers import ValidationError
+from rest_framework.views import APIView
 from rest_framework_simplejwt.tokens import AccessToken
-from reviews import models
 
+from reviews import models
 from . import serializers
-from .permissions import AdminOrReadOnly, OwnerOrReadOnly
 from .filters import TitleFilter
 from .mixins import CreateMixin
-from .permissions import AdminOrReadOnly
+from .permissions import (
+    AdminOrReadOnly, OwnerOrReadOnly, UserViewSetPermission
+)
 
 User = apps.get_model(app_label='reviews', model_name='User')
 
 
 class UserViewSet(viewsets.ModelViewSet):
-    permission_classes = (AdminOrReadOnly,)
+    permission_classes = (UserViewSetPermission,)
     pagination_class = pagination.PageNumberPagination
     filter_backends = (filters.SearchFilter,)
     search_fields = ('username',)
     queryset = User.objects.all()
-
-    def get_serializer_class(self):
-        if (
-            self.request.user.is_authenticated and (
-                self.request.user.is_superuser or
-                self.request.user.is_staff or
-                self.request.user.permission_level() == 2
-            )
-        ):
-            return serializers.UserSerializer
-        return serializers.UserCreationSerializer
+    serializer_class = serializers.UserSerializer
 
     def retrieve(self, request, *args, **kwargs):
         user = get_object_or_404(User, username=kwargs.get('pk'))
@@ -62,35 +53,77 @@ class UserViewSet(viewsets.ModelViewSet):
         self.perform_update(serializer)
         return Response(serializer.data)
 
-    def create(self, request, *args, **kwargs):
-        if not (
-            self.request.user.is_authenticated and (
-                self.request.user.is_superuser or
-                self.request.user.is_staff or
-                self.request.user.permission_level() == 2
-            )
-        ):
-            user = User.objects.create(request.data)
-            send_mail(
-                subject='YAMDB auth',
-                message=str(AccessToken.for_user(user)),
-                recipient_list=[user.email],
-                from_email=cfg.DEFAULT_FROM_EMAIL,
-            )
-            return Response(self.get_serializer(user))
-        else:
-            user = User.objects.create(request.data)
-            return Response(self.get_serializer(user))
+    def destroy(self, request, *args, **kwargs):
+        instance = get_object_or_404(
+            self.get_queryset(),
+            username=kwargs.get('pk')
+        )
+        self.perform_destroy(instance)
+        return Response(status=status.HTTP_204_NO_CONTENT)
 
     @action(
         url_path='me',
         detail=True,
         methods=['GET', 'PATCH'],
-        permission_classes=[IsAuthenticated],
+        permission_classes=(IsAuthenticated, AllowAny),
     )
     def me(self, request):
-        serializer = self.get_serializer(request.user, many=False)
+        serializer = serializers.UserSerializer(request.user, many=False)
         return Response(serializer.data)
+
+
+# class GetMeAPIView(APIView):
+#     def retrie
+
+
+class UserCreationViewSet(CreateMixin):
+    queryset = User.objects.all()
+    permission_classes = (AllowAny,)
+    serializer_class = serializers.UserCreationSerializer
+
+    def perform_create(self, serializer):
+        user = User.objects.get_or_create(
+            username=self.request.data.get('username'),
+            email=self.request.data.get('email')
+        )
+        token = Token.objects.create(user=user)
+        send_mail(
+            subject='ACCESS TOKEN',
+            message=f'{token.key}',
+            from_email=cfg.DEFAULT_FROM_EMAIL,
+            recipient_list=[user.email]
+        )
+
+
+class TokenObtainView(APIView):
+    permission_classes = (AllowAny,)
+
+    def post(self, request):
+        if User.objects.filter(username=request.data.get('username')).exists():
+            user = User.objects.filter(username=request.data.get('username'))
+            conformation_code = request.data.get('conformation_code')
+            valid_code = Token.objects.get(user=user)
+            if valid_code.key == conformation_code:
+                token = AccessToken.for_user(user)
+                serializer = serializers.TokenSerializer(token)
+                if serializer.is_valid():
+                    return Response(
+                        serializer.data,
+                        status=status.HTTP_201_CREATED
+                    )
+                return Response(
+                    serializer.errors,
+                    status=status.HTTP_400_BAD_REQUEST
+                )
+            return Response(
+                {"errors": "не правильный код подтверждения"},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        else:
+            return Response(
+                {"errors": "Пользователь не найден"},
+                status=status.HTTP_404_NOT_FOUND
+            )
 
 
 class GenreViewSet(viewsets.GenericViewSet, ListModelMixin, CreateModelMixin,

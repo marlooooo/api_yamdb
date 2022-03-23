@@ -38,9 +38,6 @@ class UserCreationSerializer(serializers.ModelSerializer):
             )
         return value
 
-    def create(self, validated_data):
-        validated_data.get('username')
-
 
 class UserSerializer(serializers.ModelSerializer):
     class Meta:
@@ -71,9 +68,8 @@ class UserSerializer(serializers.ModelSerializer):
         return value
 
 
-class CommentSerializer(serializers.ModelSerializer):
-    pass
-
+class TokenSerializer(serializers.Serializer):
+    token = serializers.CharField()
 
 
 class GenreSerializer(serializers.ModelSerializer):
