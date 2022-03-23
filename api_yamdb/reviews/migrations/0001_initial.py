@@ -64,6 +64,7 @@ class Migration(migrations.Migration):
                 ('name', models.TextField(default='Название произведения', verbose_name='Название')),
                 ('year', models.IntegerField(blank=True, null=True, validators=[django.core.validators.MaxValueValidator(2022)], verbose_name='Год выпуска')),
                 ('description', models.TextField(blank=True, null=True, verbose_name='Описание')),
+
                 ('category', models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.SET_NULL, to='reviews.Category')),
                 ('genre', models.ManyToManyField(blank=True, null=True, to='reviews.Genre')),
             ],

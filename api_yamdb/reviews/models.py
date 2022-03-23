@@ -93,7 +93,7 @@ class Title(models.Model):
     """Класс, описывающий произведение."""
     name = models.TextField(
         'Название',
-        default='Название произведения'
+        default='Название произведения',
     )
     year = models.IntegerField(
         'Год выпуска',
@@ -104,18 +104,20 @@ class Title(models.Model):
     description = models.TextField(
         'Описание',
         blank=True,
-        null=True
+        null=True,
     )
     genre = models.ManyToManyField(
         Genre,
         blank=True,
-        null=True
+        # null=True,
+        related_name='titles'
     )
     category = models.ForeignKey(
         Category,
         on_delete=models.SET_NULL,
         blank=True,
-        null=True
+        null=True,
+        related_name='titles'
     )
 
     class Meta:
@@ -130,7 +132,7 @@ class Review(models.Model):
     title = models.ForeignKey(
         Title,
         on_delete=models.CASCADE,
-        related_name='reviews',
+        related_name='reviewses',
     )
     text = models.TextField('Текст отзыва',)
     author = models.ForeignKey(
@@ -145,6 +147,7 @@ class Review(models.Model):
 
     class Meta:
         unique_together = ('title', 'author')
+        ordering = ('id',)
 
     def __str__(self):
         return f'Отзыв на {self.title} от {self.author}'
@@ -165,3 +168,6 @@ class Comment(models.Model):
     )
     pub_date = models.DateTimeField('Дата и время публикации',
                                     auto_now_add=True)
+
+    class Meta:
+        ordering = ('id',)
