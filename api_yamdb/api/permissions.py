@@ -41,3 +41,14 @@ class UserViewSetPermission(BasePermission):
                 request.user.permission_level() == 2
             )
         )
+
+
+class CustomIsAuthorized(BasePermission):
+    def has_permission(self, request, view):
+        return (
+            request.user.is_authenticated
+            and request.user.permission_level()
+        )
+
+    def has_object_permission(self, request, view, obj):
+        return self.has_permission(request, view)

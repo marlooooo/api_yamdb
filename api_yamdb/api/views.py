@@ -18,9 +18,9 @@ from rest_framework_simplejwt.tokens import AccessToken
 from reviews import models
 from . import serializers
 from .filters import TitleFilter
-from .mixins import CreateMixin
+from .mixins import CreateMixin, GetOneMixin
 from .permissions import (
-    AdminOrReadOnly, OwnerOrReadOnly, UserViewSetPermission
+    AdminOrReadOnly, OwnerOrReadOnly, UserViewSetPermission, CustomIsAuthorized
 )
 
 User = apps.get_model(app_label='reviews', model_name='User')
@@ -61,19 +61,37 @@ class UserViewSet(viewsets.ModelViewSet):
         self.perform_destroy(instance)
         return Response(status=status.HTTP_204_NO_CONTENT)
 
-    @action(
-        url_path='me',
-        detail=True,
-        methods=['GET', 'PATCH'],
-        permission_classes=(IsAuthenticated, AllowAny),
-    )
-    def me(self, request):
-        serializer = serializers.UserSerializer(request.user, many=False)
+    # @action(
+    #     url_path='me',
+    #     detail=True,
+    #     methods=['GET', 'PATCH'],
+    #     permission_classes=(IsAuthenticated, AllowAny),
+    # )
+    # def me(self, request):
+    #     serializer = serializers.UserSerializer(request.user, many=False)
+    #     return Response(serializer.data)
+
+
+class GetMeViewSet(GetOneMixin):
+    serializer_class = serializers.UserSerializer
+    permission_classes = (CustomIsAuthorized,)
+    queryset = User.objects.all()
+
+    def retrieve(self, request, *args, **kwargs):
+        instance = request.user
+        return Response(self.get_serializer(instance).data)
+
+    def update(self, request, *args, **kwargs):
+        partial = kwargs.pop('partial', False)
+        instance = self.request.user
+        serializer = self.get_serializer(
+            instance,
+            data=request.data,
+            partial=partial,
+        )
+        serializer.is_valid(raise_exception=True)
+        self.perform_update(serializer)
         return Response(serializer.data)
-
-
-# class GetMeAPIView(APIView):
-#     def retrie
 
 
 class UserCreationViewSet(CreateMixin):
@@ -99,31 +117,34 @@ class TokenObtainView(APIView):
     permission_classes = (AllowAny,)
 
     def post(self, request):
-        if User.objects.filter(username=request.data.get('username')).exists():
-            user = User.objects.filter(username=request.data.get('username'))
-            conformation_code = request.data.get('conformation_code')
-            valid_code = Token.objects.get(user=user)
-            if valid_code.key == conformation_code:
-                token = AccessToken.for_user(user)
-                serializer = serializers.TokenSerializer(token)
-                if serializer.is_valid():
-                    return Response(
-                        serializer.data,
-                        status=status.HTTP_201_CREATED
-                    )
-                return Response(
-                    serializer.errors,
-                    status=status.HTTP_400_BAD_REQUEST
-                )
-            return Response(
-                {"errors": "не правильный код подтверждения"},
-                status=status.HTTP_400_BAD_REQUEST
-            )
-        else:
+        if not User.objects.filter(
+                username=request.data.get('username')
+        ).exists():
             return Response(
                 {"errors": "Пользователь не найден"},
                 status=status.HTTP_404_NOT_FOUND
             )
+        user = User.objects.filter(username=request.data.get('username'))
+        conformation_code = request.data.get('conformation_code')
+        valid_code = Token.objects.get(user=user)
+        if valid_code.key != conformation_code:
+            return Response(
+                {"errors": "не правильный код подтверждения"},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        token = AccessToken.for_user(user)
+        serializer = serializers.TokenSerializer(token)
+        if serializer.is_valid():
+            return Response(
+                serializer.data,
+                status=status.HTTP_201_CREATED
+            )
+        return Response(
+            serializer.errors,
+            status=status.HTTP_400_BAD_REQUEST
+        )
+
+
 
 
 class GenreViewSet(viewsets.GenericViewSet, ListModelMixin, CreateModelMixin,
