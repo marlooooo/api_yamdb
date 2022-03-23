@@ -1,10 +1,11 @@
 from django.apps import apps
+from django.db.models import Avg
 # from django.conf import settings
 
 from rest_framework import serializers
 from rest_framework.validators import UniqueTogetherValidator
 
-from reviews import models 
+from reviews import models
 
 # Доступ к моделям через apps.get_model(app_label='review', model_name='User')
 
@@ -62,7 +63,7 @@ class UserSerializer(serializers.ModelSerializer):
     def validate_username(self, value):
         if 'me' == value.lower():
             raise serializers.ValidationError(
-                f'Имя пользователя не может быть me.'
+                'Имя пользователя не может быть me.'
             )
         return value
 
@@ -96,23 +97,6 @@ class UserAdminSerializer(serializers.ModelSerializer):
         return value
 
 
-class ReviewSerializer(serializers.ModelSerializer):
-    author = serializers.SlugRelatedField(
-        slug_field='username',
-        read_only=True,
-        default=serializers.CurrentUserDefault()
-    )
-    pub_date = serializers.DateTimeField(read_only=True)
-
-    class Meta:
-        fields = ('id', 'text', 'author', 'score', 'pub_date')
-        model = models.Review
-
-
-class CommentSerializer(serializers.ModelSerializer):
-    pass
-
-
 class GenreSerializer(serializers.ModelSerializer):
     """Сериализатор для жанра"""
     class Meta:
@@ -131,18 +115,68 @@ class TitleReadOnlySerializer(serializers.ModelSerializer):
     """Сериализатор для тайтлов на чтение"""
     category = CategorySerializer(read_only=True)
     genre = GenreSerializer(read_only=True, many=True)
-    rating = serializers.IntegerField(read_only=True)
+    rating = serializers.SerializerMethodField()
 
     class Meta:
-        fields = '__all__'
+        fields = ('id', 'name', 'year', 'description',
+                  'category', 'genre', 'rating')
         model = models.Title
+
+    def get_rating(self, obj):
+        avg_score = (
+            models.Review.objects.filter(title__id=obj.id)
+            .aggregate(Avg('score')).get('score__avg')
+        )
+        return avg_score
 
 
 class TitleEditSerializer(serializers.ModelSerializer):
     """Сериализатор для тайтлов на запись"""
-    category = serializers.SlugRelatedField(queryset=models.Category.objects.all(), slug_field='slug')
-    genre = serializers.SlugRelatedField(queryset=models.Genre.objects.all(), slug_field='slug', many=True)
+    category = serializers.SlugRelatedField(
+        queryset=models.Category.objects.all(),
+        slug_field='slug'
+    )
+    genre = serializers.SlugRelatedField(
+        queryset=models.Genre.objects.all(),
+        slug_field='slug',
+        many=True
+    )
+    rating = serializers.SerializerMethodField()
 
     class Meta:
-        fields = '__all__'
+        fields = ('id', 'name', 'year', 'description', 'category',
+                  'genre', 'rating')
         model = models.Title
+
+    def get_rating(self, obj):
+        avg_score = (
+            models.Review.objects.filter(title__id=obj.id)
+            .aggregate(Avg('score')).get('score__avg')
+        )
+        return avg_score
+
+
+class ReviewSerializer(serializers.ModelSerializer):
+    author = serializers.SlugRelatedField(
+        slug_field='username',
+        read_only=True,
+        default=serializers.CurrentUserDefault()
+    )
+    pub_date = serializers.DateTimeField(read_only=True)
+
+    class Meta:
+        fields = ('id', 'text', 'score', 'author', 'pub_date')
+        model = models.Review
+
+
+class CommentSerializer(serializers.ModelSerializer):
+    author = serializers.SlugRelatedField(
+        slug_field='username',
+        read_only=True,
+        default=serializers.CurrentUserDefault()
+    )
+    pub_date = serializers.DateTimeField(read_only=True)
+
+    class Meta:
+        fields = ('id', 'text', 'author', 'pub_date')
+        model = models.Comment
