@@ -11,5 +11,3 @@ class TitleAdmin(admin.ModelAdmin):
 @admin.register(Review)
 class ReviewAdmin(admin.ModelAdmin):
     pass
-
-# Register your models here.

@@ -6,9 +6,6 @@ from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework import viewsets, pagination, filters, status
 from rest_framework.authtoken.models import Token
 from rest_framework.decorators import action
-from rest_framework.mixins import (
-    ListModelMixin, CreateModelMixin, DestroyModelMixin
-)
 from rest_framework.permissions import IsAuthenticated, AllowAny
 from rest_framework.response import Response
 from rest_framework.serializers import ValidationError
@@ -18,9 +15,9 @@ from rest_framework_simplejwt.tokens import AccessToken
 from reviews import models
 from . import serializers
 from .filters import TitleFilter
-from .mixins import CreateMixin, GetOneMixin
+from .mixins import CreateMixin, CategoriesGenresMixin
 from .permissions import (
-    AdminOrReadOnly, OwnerOrReadOnly, UserViewSetPermission, CustomIsAuthorized
+    AdminOrReadOnly, OwnerOrReadOnly, UserViewSetPermission
 )
 
 User = apps.get_model(app_label='reviews', model_name='User')
@@ -33,33 +30,7 @@ class UserViewSet(viewsets.ModelViewSet):
     search_fields = ('username',)
     queryset = User.objects.all()
     serializer_class = serializers.UserSerializer
-
-    def retrieve(self, request, *args, **kwargs):
-        user = get_object_or_404(User, username=kwargs.get('pk'))
-        return Response(self.serializer_class(user).data)
-
-    def update(self, request, *args, **kwargs):
-        partial = kwargs.pop('partial', False)
-        instance = get_object_or_404(
-            self.get_queryset(),
-            username=kwargs.get('pk')
-        )
-        serializer = self.get_serializer(
-            instance,
-            data=request.data,
-            partial=partial,
-        )
-        serializer.is_valid(raise_exception=True)
-        self.perform_update(serializer)
-        return Response(serializer.data)
-
-    def destroy(self, request, *args, **kwargs):
-        instance = get_object_or_404(
-            self.get_queryset(),
-            username=kwargs.get('pk')
-        )
-        self.perform_destroy(instance)
-        return Response(status=status.HTTP_204_NO_CONTENT)
+    lookup_field = 'username'
 
     @action(
         url_path='me',
@@ -104,27 +75,28 @@ class UserCreationViewSet(CreateMixin):
             key = token.key
         send_mail(
             subject='ACCESS TOKEN',
-            message=f'{key}',
+            message=f'{user.username.capitalize()}, you'
+                    f'r key is\n key - "{key}"',
             from_email=cfg.DEFAULT_FROM_EMAIL,
             recipient_list=(user.email,)
         )
         return Response(serializer.data, status=status.HTTP_200_OK)
 
 
-class TokenObtainView(APIView):
+class CustomTokenObtainView(APIView):
     def post(self, request):
         serializer = serializers.TokenObtainSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
-        if not User.objects.filter(
-                username__exact=request.data.get('username')).exists():
+        try:
+            _user = User.objects.get(username=request.data.get('username'))
+        except User.DoesNotExist:
             return Response(
-                {'username': 'check username'},
+                {'username': 'Проверьте правильность username'},
                 status=status.HTTP_404_NOT_FOUND,
             )
-        _user = User.objects.get(username=request.data.get('username'))
         if Token.objects.filter(
             user_id__exact=_user.id,
-            key__exact=request.data.get('conformation_code')
+            key__exact=request.data.get('confirmation_code')
         ):
             return Response(
                 {'token': str(AccessToken.for_user(_user))},
@@ -134,32 +106,9 @@ class TokenObtainView(APIView):
             {'token': 'Проверьте правильность кода подтверждения'},
             status=status.HTTP_400_BAD_REQUEST
         )
-    # def post(self, request):
-    #     serializer = serializers.TokenObtainSerializer(data=request.data)
-    #     serializer.is_valid(raise_exception=True)
-    #     if User.objects.filter(
-    #             username=request.data.get('username')).count() == 0:
-    #         return Response(
-    #             {'username': 'Пользователь не найден'},
-    #             status=404
-    #         )
-    #     user = User.objects.get(username=request.data.get('username'))
-    #     conformation_code = request.data.get('conformation_code')
-    #     valid_code = Token.objects.get(user_id=user.id)
-    #     if valid_code.key != conformation_code:
-    #         return Response(
-    #             {'conformation_code': 'Не правильный код подтверждения!'},
-    #             status=status.HTTP_400_BAD_REQUEST
-    #         )
-    #     token = AccessToken.for_user(user)
-    #     return Response(
-    #         {'token': str(token)},
-    #         status=status.HTTP_201_CREATED
-    #     )
 
 
-class GenreViewSet(viewsets.GenericViewSet, ListModelMixin, CreateModelMixin,
-                   DestroyModelMixin):
+class GenreViewSet(CategoriesGenresMixin):
     """Вьюсет для жанров"""
     permission_classes = (AdminOrReadOnly,)
     queryset = models.Genre.objects.all()
@@ -169,8 +118,7 @@ class GenreViewSet(viewsets.GenericViewSet, ListModelMixin, CreateModelMixin,
     search_fields = ('name',)
 
 
-class CategoryViewSet(viewsets.GenericViewSet, ListModelMixin,
-                      CreateModelMixin, DestroyModelMixin):
+class CategoryViewSet(CategoriesGenresMixin):
     """Вьюсет для категорий"""
     permission_classes = (AdminOrReadOnly,)
     queryset = models.Category.objects.all()
@@ -207,7 +155,7 @@ class ReviewViewSet(viewsets.ModelViewSet):
     def perform_create(self, serializer):
         author = self.request.user
         title = get_object_or_404(models.Title, id=self.kwargs.get('title_id'))
-        if (models.Review.objects.filter(author=author, title=title).exists()):
+        if models.Review.objects.filter(author=author, title=title).exists():
             raise ValidationError('Только один отзыв на произведение')
         else:
             serializer.save(
@@ -221,15 +169,19 @@ class CommentViewSet(viewsets.ModelViewSet):
     serializer_class = serializers.CommentSerializer
 
     def get_queryset(self):
-        review = get_object_or_404(models.Review,
-                                   id=self.kwargs.get('review_id'))
+        review = get_object_or_404(
+            models.Review,
+            id=self.kwargs.get('review_id'),
+        )
         queryset = models.Comment.objects.filter(review=review)
         return queryset
 
     def perform_create(self, serializer):
         author = self.request.user
-        review = get_object_or_404(models.Review,
-                                   id=self.kwargs.get('review_id'))
+        review = get_object_or_404(
+            models.Review,
+            id=self.kwargs.get('review_id'),
+        )
         serializer.save(
             author=author,
             review=review
