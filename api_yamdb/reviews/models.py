@@ -147,7 +147,10 @@ class Review(models.Model):
                                     auto_now_add=True)
 
     class Meta:
-        unique_together = ('title', 'author')
+        constraints = [
+            models.UniqueConstraint(fields=['title', 'author'],
+                                    name='title_author_together')
+        ]
         ordering = ('id',)
 
     def __str__(self):
