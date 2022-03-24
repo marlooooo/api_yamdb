@@ -34,7 +34,7 @@ class User(AbstractUser):
     )
     role = models.CharField(
         'role',
-        default=Role[0][0],
+        default='user',
         choices=Role,
         max_length=10,
     )
@@ -110,7 +110,6 @@ class Title(models.Model):
     genre = models.ManyToManyField(
         Genre,
         blank=True,
-        # null=True,
         related_name='titles'
     )
     category = models.ForeignKey(
@@ -147,7 +146,12 @@ class Review(models.Model):
                                     auto_now_add=True)
 
     class Meta:
-        unique_together = ('title', 'author')
+        constraints = [
+            models.UniqueConstraint(
+                fields=['title', 'author'],
+                name='title_author_together'
+            )
+        ]
         ordering = ('id',)
 
     def __str__(self):
