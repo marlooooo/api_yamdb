@@ -61,37 +61,27 @@ class UserViewSet(viewsets.ModelViewSet):
         self.perform_destroy(instance)
         return Response(status=status.HTTP_204_NO_CONTENT)
 
-    # @action(
-    #     url_path='me',
-    #     detail=True,
-    #     methods=['GET', 'PATCH'],
-    #     permission_classes=(IsAuthenticated, AllowAny),
-    # )
-    # def me(self, request):
-    #     serializer = serializers.UserSerializer(request.user, many=False)
-    #     return Response(serializer.data)
-
-
-class GetMeViewSet(GetOneMixin):
-    serializer_class = serializers.UserSerializer
-    permission_classes = (CustomIsAuthorized,)
-    queryset = User.objects.all()
-
-    def retrieve(self, request, *args, **kwargs):
-        instance = request.user
-        return Response(self.get_serializer(instance).data)
-
-    def update(self, request, *args, **kwargs):
-        partial = kwargs.pop('partial', False)
-        instance = self.request.user
-        serializer = self.get_serializer(
-            instance,
-            data=request.data,
-            partial=partial,
-        )
+    @action(
+        url_path='me',
+        detail=False,
+        methods=('GET', 'PATCH'),
+        permission_classes=(IsAuthenticated,),
+    )
+    def me(self, request):
+        serializer = serializers.UserSerializer(request.user)
+        if request.method == 'GET':
+            return Response(serializer.data, status=status.HTTP_200_OK)
+        if request.user.is_superuser or request.user.permission_level() == 2:
+            serializer = serializers.UserSerializer(
+                request.user, data=request.data, partial=True
+            )
+        else:
+            serializer = serializers.NotAdminUserSerializer(
+                request.user, data=request.data, partial=True
+            )
         serializer.is_valid(raise_exception=True)
-        self.perform_update(serializer)
-        return Response(serializer.data)
+        serializer.save()
+        return Response(serializer.data, status=status.HTTP_200_OK)
 
 
 class UserCreationViewSet(CreateMixin):
@@ -99,52 +89,73 @@ class UserCreationViewSet(CreateMixin):
     permission_classes = (AllowAny,)
     serializer_class = serializers.UserCreationSerializer
 
-    def perform_create(self, serializer):
-        user = User.objects.get_or_create(
+    def create(self, request, *args, **kwargs):
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        self.perform_create(serializer)
+        user = self.get_queryset().get(
             username=self.request.data.get('username'),
             email=self.request.data.get('email')
         )
-        token = Token.objects.create(user=user)
+        token = Token.objects.get_or_create(user_id=user.id)
+        if type(token) == tuple:
+            key = token[0].key
+        else:
+            key = token.key
         send_mail(
             subject='ACCESS TOKEN',
-            message=f'{token.key}',
+            message=f'{key}',
             from_email=cfg.DEFAULT_FROM_EMAIL,
-            recipient_list=[user.email]
+            recipient_list=(user.email,)
         )
+        return Response(serializer.data, status=status.HTTP_200_OK)
 
 
 class TokenObtainView(APIView):
-    permission_classes = (AllowAny,)
-
     def post(self, request):
+        serializer = serializers.TokenObtainSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
         if not User.objects.filter(
-                username=request.data.get('username')
-        ).exists():
+                username__exact=request.data.get('username')).exists():
             return Response(
-                {"errors": "Пользователь не найден"},
-                status=status.HTTP_404_NOT_FOUND
+                {'username': 'check username'},
+                status=status.HTTP_404_NOT_FOUND,
             )
-        user = User.objects.filter(username=request.data.get('username'))
-        conformation_code = request.data.get('conformation_code')
-        valid_code = Token.objects.get(user=user)
-        if valid_code.key != conformation_code:
+        _user = User.objects.get(username=request.data.get('username'))
+        if Token.objects.filter(
+            user_id__exact=_user.id,
+            key__exact=request.data.get('conformation_code')
+        ):
             return Response(
-                {"errors": "не правильный код подтверждения"},
-                status=status.HTTP_400_BAD_REQUEST
-            )
-        token = AccessToken.for_user(user)
-        serializer = serializers.TokenSerializer(token)
-        if serializer.is_valid():
-            return Response(
-                serializer.data,
-                status=status.HTTP_201_CREATED
+                {'token': str(AccessToken.for_user(_user))},
+                status=status.HTTP_200_OK
             )
         return Response(
-            serializer.errors,
+            {'token': 'Проверьте правильность кода подтверждения'},
             status=status.HTTP_400_BAD_REQUEST
         )
-
-
+    # def post(self, request):
+    #     serializer = serializers.TokenObtainSerializer(data=request.data)
+    #     serializer.is_valid(raise_exception=True)
+    #     if User.objects.filter(
+    #             username=request.data.get('username')).count() == 0:
+    #         return Response(
+    #             {'username': 'Пользователь не найден'},
+    #             status=404
+    #         )
+    #     user = User.objects.get(username=request.data.get('username'))
+    #     conformation_code = request.data.get('conformation_code')
+    #     valid_code = Token.objects.get(user_id=user.id)
+    #     if valid_code.key != conformation_code:
+    #         return Response(
+    #             {'conformation_code': 'Не правильный код подтверждения!'},
+    #             status=status.HTTP_400_BAD_REQUEST
+    #         )
+    #     token = AccessToken.for_user(user)
+    #     return Response(
+    #         {'token': str(token)},
+    #         status=status.HTTP_201_CREATED
+    #     )
 
 
 class GenreViewSet(viewsets.GenericViewSet, ListModelMixin, CreateModelMixin,

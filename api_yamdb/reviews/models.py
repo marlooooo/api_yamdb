@@ -7,11 +7,11 @@ from django.db import models
 
 class User(AbstractUser):
     """Класс, описывающий стандартного пользователя."""
-    class Role(models.TextChoices):
-        USER = 'user', '0'
-        MODERATOR = 'moderator', '1'
-        ADMIN = 'admin', '2'
-
+    Role = (
+        ('user', '0'),
+        ('moderator', '1'),
+        ('admin', '2'),
+    )
     email = models.EmailField(
         'email',
         max_length=254,
@@ -34,8 +34,8 @@ class User(AbstractUser):
     )
     role = models.CharField(
         'role',
-        default=Role.USER,
-        choices=Role.choices,
+        default=Role[0][0],
+        choices=Role,
         max_length=10,
     )
 
@@ -46,6 +46,7 @@ class User(AbstractUser):
                 name='user_email_constraint'
             )
         ]
+        ordering = ('-id',)
 
     def permission_level(self) -> int:
         return int(self.get_role_display())
@@ -64,7 +65,7 @@ class Genre(models.Model):
     )
 
     class Meta:
-        ordering = ['-slug']
+        ordering = ('-slug',)
 
     def __str__(self):
         return self.name
@@ -83,7 +84,7 @@ class Category(models.Model):
     )
 
     class Meta:
-        ordering = ['-slug']
+        ordering = ('-slug',)
 
     def __str__(self):
         return self.name
@@ -121,7 +122,7 @@ class Title(models.Model):
     )
 
     class Meta:
-        ordering = ['-name']
+        ordering = ('-name',)
 
     def __str__(self):
         return self.name
