@@ -135,12 +135,5 @@ SIMPLE_JWT = {
     'AUTH_HEADER_TYPES': ('Bearer',),
 }
 
-EMAIL_HOST_USER = os.getenv('EMAIL_USERNAME')
-DEFAULT_FROM_EMAIL = f'{EMAIL_HOST_USER}@ya.ru'
+DEFAULT_FROM_EMAIL = f'api_yamdb@ya.ru'
 EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
-
-EMAIL_HOST = 'smtp.yandex.ru'
-
-EMAIL_USE_SSL = True
-EMAIL_PORT = 465
-EMAIL_HOST_PASSWORD = os.getenv('EMAIL_PASSWORD')
