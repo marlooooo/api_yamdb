@@ -135,5 +135,5 @@ SIMPLE_JWT = {
     'AUTH_HEADER_TYPES': ('Bearer',),
 }
 
-DEFAULT_FROM_EMAIL = f'api_yamdb@ya.ru'
+DEFAULT_FROM_EMAIL = f'noreply@api_yamdb.ru'
 EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
