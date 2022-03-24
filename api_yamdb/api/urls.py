@@ -39,7 +39,24 @@ router_v1.register(
     views.CommentViewSet,
     'comments'
 )
+router_v1.register(
+    r'users',
+    views.UserViewSet,
+    basename='users'
+)
+router_v1.register(
+    r'auth/signup',
+    views.UserCreationViewSet,
+    basename='user_creation'
+)
+# router_v1.register(
+#     r'users/me',
+#     views.GetMeViewSet,
+#     basename='me'
+# )
+
 
 urlpatterns = [
     path('v1/', include(router_v1.urls)),
+    path('v1/auth/token/', views.TokenObtainView.as_view(), name='get_token'),
 ]
