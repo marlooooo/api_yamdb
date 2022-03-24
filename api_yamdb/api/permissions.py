@@ -24,9 +24,9 @@ class AdminOrReadOnly(BasePermission):
         return (
             request.method in SAFE_METHODS or (
                 request.user.is_authenticated and (
-                    request.user.is_staff or
-                    request.user.permission_level() == 2 or
-                    request.user.is_superuser
+                    request.user.is_staff
+                    or request.user.permission_level() == 2
+                    or request.user.is_superuser
                 )
             )
         )
@@ -36,8 +36,8 @@ class UserViewSetPermission(BasePermission):
     def has_permission(self, request, view):
         return (
             request.user.is_authenticated and (
-                request.user.is_staff or
-                request.user.is_superuser or
-                request.user.permission_level() == 2
+                request.user.is_staff
+                or request.user.is_superuser
+                or request.user.permission_level() == 2
             )
         )
