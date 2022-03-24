@@ -1,34 +1,161 @@
 from django.apps import apps
+from django.conf import settings as cfg
+from django.core.mail import send_mail
 from django.shortcuts import get_object_or_404
-from rest_framework import viewsets, pagination, filters
-from rest_framework.mixins import (ListModelMixin, CreateModelMixin,
-                                   DestroyModelMixin)
-from rest_framework.serializers import ValidationError
 from django_filters.rest_framework import DjangoFilterBackend
-
+from rest_framework import viewsets, pagination, filters, status
+from rest_framework.authtoken.models import Token
+from rest_framework.decorators import action
+from rest_framework.mixins import (
+    ListModelMixin, CreateModelMixin, DestroyModelMixin
+)
+from rest_framework.permissions import IsAuthenticated, AllowAny
+from rest_framework.response import Response
+from rest_framework.serializers import ValidationError
+from rest_framework.views import APIView
+from rest_framework_simplejwt.tokens import AccessToken
 
 from reviews import models
 from . import serializers
-from .permissions import AdminOrReadOnly, OwnerOrReadOnly
 from .filters import TitleFilter
+from .mixins import CreateMixin, GetOneMixin
+from .permissions import (
+    AdminOrReadOnly, OwnerOrReadOnly, UserViewSetPermission, CustomIsAuthorized
+)
 
 User = apps.get_model(app_label='reviews', model_name='User')
 
 
 class UserViewSet(viewsets.ModelViewSet):
-    permission_classes = (
-        AdminOrReadOnly,
-    )
-    pagination_class = pagination.LimitOffsetPagination
-    serializer_class = serializers.UserAdminSerializer
-    filter_backends = (
-        filters.SearchFilter,
-    )
-    search_fields = (
-        'username',
-        'email',
-    )
+    permission_classes = (UserViewSetPermission,)
+    pagination_class = pagination.PageNumberPagination
+    filter_backends = (filters.SearchFilter,)
+    search_fields = ('username',)
     queryset = User.objects.all()
+    serializer_class = serializers.UserSerializer
+
+    def retrieve(self, request, *args, **kwargs):
+        user = get_object_or_404(User, username=kwargs.get('pk'))
+        return Response(self.serializer_class(user).data)
+
+    def update(self, request, *args, **kwargs):
+        partial = kwargs.pop('partial', False)
+        instance = get_object_or_404(
+            self.get_queryset(),
+            username=kwargs.get('pk')
+        )
+        serializer = self.get_serializer(
+            instance,
+            data=request.data,
+            partial=partial,
+        )
+        serializer.is_valid(raise_exception=True)
+        self.perform_update(serializer)
+        return Response(serializer.data)
+
+    def destroy(self, request, *args, **kwargs):
+        instance = get_object_or_404(
+            self.get_queryset(),
+            username=kwargs.get('pk')
+        )
+        self.perform_destroy(instance)
+        return Response(status=status.HTTP_204_NO_CONTENT)
+
+    @action(
+        url_path='me',
+        detail=False,
+        methods=('GET', 'PATCH'),
+        permission_classes=(IsAuthenticated,),
+    )
+    def me(self, request):
+        serializer = serializers.UserSerializer(request.user)
+        if request.method == 'GET':
+            return Response(serializer.data, status=status.HTTP_200_OK)
+        if request.user.is_superuser or request.user.permission_level() == 2:
+            serializer = serializers.UserSerializer(
+                request.user, data=request.data, partial=True
+            )
+        else:
+            serializer = serializers.NotAdminUserSerializer(
+                request.user, data=request.data, partial=True
+            )
+        serializer.is_valid(raise_exception=True)
+        serializer.save()
+        return Response(serializer.data, status=status.HTTP_200_OK)
+
+
+class UserCreationViewSet(CreateMixin):
+    queryset = User.objects.all()
+    permission_classes = (AllowAny,)
+    serializer_class = serializers.UserCreationSerializer
+
+    def create(self, request, *args, **kwargs):
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        self.perform_create(serializer)
+        user = self.get_queryset().get(
+            username=self.request.data.get('username'),
+            email=self.request.data.get('email')
+        )
+        token = Token.objects.get_or_create(user_id=user.id)
+        if type(token) == tuple:
+            key = token[0].key
+        else:
+            key = token.key
+        send_mail(
+            subject='ACCESS TOKEN',
+            message=f'{key}',
+            from_email=cfg.DEFAULT_FROM_EMAIL,
+            recipient_list=(user.email,)
+        )
+        return Response(serializer.data, status=status.HTTP_200_OK)
+
+
+class TokenObtainView(APIView):
+    def post(self, request):
+        serializer = serializers.TokenObtainSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        if not User.objects.filter(
+                username__exact=request.data.get('username')).exists():
+            return Response(
+                {'username': 'check username'},
+                status=status.HTTP_404_NOT_FOUND,
+            )
+        _user = User.objects.get(username=request.data.get('username'))
+        if Token.objects.filter(
+            user_id__exact=_user.id,
+            key__exact=request.data.get('conformation_code')
+        ):
+            return Response(
+                {'token': str(AccessToken.for_user(_user))},
+                status=status.HTTP_200_OK
+            )
+        return Response(
+            {'token': 'Проверьте правильность кода подтверждения'},
+            status=status.HTTP_400_BAD_REQUEST
+        )
+    # def post(self, request):
+    #     serializer = serializers.TokenObtainSerializer(data=request.data)
+    #     serializer.is_valid(raise_exception=True)
+    #     if User.objects.filter(
+    #             username=request.data.get('username')).count() == 0:
+    #         return Response(
+    #             {'username': 'Пользователь не найден'},
+    #             status=404
+    #         )
+    #     user = User.objects.get(username=request.data.get('username'))
+    #     conformation_code = request.data.get('conformation_code')
+    #     valid_code = Token.objects.get(user_id=user.id)
+    #     if valid_code.key != conformation_code:
+    #         return Response(
+    #             {'conformation_code': 'Не правильный код подтверждения!'},
+    #             status=status.HTTP_400_BAD_REQUEST
+    #         )
+    #     token = AccessToken.for_user(user)
+    #     return Response(
+    #         {'token': str(token)},
+    #         status=status.HTTP_201_CREATED
+    #     )
 
 
 class GenreViewSet(viewsets.GenericViewSet, ListModelMixin, CreateModelMixin,

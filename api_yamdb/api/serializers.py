@@ -1,3 +1,5 @@
+from abc import ABC
+
 from django.apps import apps
 from django.db.models import Avg
 # from django.conf import settings
@@ -68,7 +70,7 @@ class UserSerializer(serializers.ModelSerializer):
         return value
 
 
-class UserAdminSerializer(serializers.ModelSerializer):
+class NotAdminUserSerializer(serializers.ModelSerializer):
     class Meta:
         model = User
         fields = (
@@ -79,6 +81,7 @@ class UserAdminSerializer(serializers.ModelSerializer):
             'bio',
             'role',
         )
+        read_only_fields = ('role',)
         validators = [
             UniqueTogetherValidator(
                 queryset=User.objects.all(),
@@ -90,11 +93,24 @@ class UserAdminSerializer(serializers.ModelSerializer):
         ]
 
     def validate_username(self, value):
-        if value.lower() == 'me':
+        if 'me' == value.lower():
             raise serializers.ValidationError(
                 'Имя пользователя не может быть me.'
             )
         return value
+
+
+class TokenSerializer(serializers.Serializer):
+    token = serializers.CharField(required=True)
+
+
+class TokenObtainSerializer(serializers.ModelSerializer):
+    username = serializers.CharField(required=True)
+    conformation_code = serializers.CharField(required=True)
+
+    class Meta:
+        model = User
+        fields = ('username', 'conformation_code')
 
 
 class GenreSerializer(serializers.ModelSerializer):
