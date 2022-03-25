@@ -141,10 +141,6 @@ class Title(models.Model):
         related_name='titles'
     )
 
-    class Meta:
-        pass
-        # ordering = ('-name',)
-
     def __str__(self):
         return self.name
 
@@ -162,8 +158,13 @@ class Review(models.Model):
         on_delete=models.CASCADE,
         related_name='reviews',
     )
-    score = models.IntegerField('Оценка', validators=(MinValueValidator(1),
-                                MaxValueValidator(10)))
+    score = models.IntegerField(
+        'Оценка',
+        validators=(
+            MinValueValidator(1, message='Оценка не может быть менее 1'),
+            MaxValueValidator(10, message='Оценка не может быть более 10')
+        )
+    )
     pub_date = models.DateTimeField('Дата и время публикации',
                                     auto_now_add=True)
 
@@ -174,7 +175,6 @@ class Review(models.Model):
                 name='title_author_together'
             )
         ]
-        ordering = ('-pub_date',)
 
     def __str__(self):
         return f'Отзыв на {self.title} от {self.author}'

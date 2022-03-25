@@ -9,7 +9,6 @@ from rest_framework.authtoken.models import Token
 from rest_framework.decorators import action
 from rest_framework.permissions import IsAuthenticated, AllowAny
 from rest_framework.response import Response
-from rest_framework.serializers import ValidationError
 from rest_framework.views import APIView
 from rest_framework_simplejwt.tokens import AccessToken
 
@@ -131,7 +130,8 @@ class CategoryViewSet(CategoriesGenresMixin):
 class TitleViewSet(viewsets.ModelViewSet):
     """Вьюсет для тайтлов"""
     permission_classes = (AdminOrReadOnly,)
-    queryset = models.Title.objects.all().annotate(rating=Avg('reviews__score')).order_by('-name')
+    queryset = (models.Title.objects.all()
+                .annotate(rating=Avg('reviews__score')).order_by('-name'))
     filter_backends = [DjangoFilterBackend]
     filterset_class = TitleFilter
 
@@ -149,19 +149,16 @@ class ReviewViewSet(viewsets.ModelViewSet):
 
     def get_queryset(self):
         title = get_object_or_404(models.Title, id=self.kwargs.get('title_id'))
-        queryset = models.Review.objects.filter(title=title).order_by('-pub_date')
+        queryset = title.reviews.all().order_by('-pub_date')
         return queryset
 
     def perform_create(self, serializer):
         author = self.request.user
         title = get_object_or_404(models.Title, id=self.kwargs.get('title_id'))
-        if models.Review.objects.filter(author=author, title=title).exists():
-            raise ValidationError('Только один отзыв на произведение')
-        else:
-            serializer.save(
-                author=author,
-                title=title
-            )
+        serializer.save(
+            author=author,
+            title=title
+        )
 
 
 class CommentViewSet(viewsets.ModelViewSet):
