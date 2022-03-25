@@ -42,14 +42,15 @@ class UserViewSet(viewsets.ModelViewSet):
         serializer = serializers.UserSerializer(request.user)
         if request.method == 'GET':
             return Response(serializer.data, status=status.HTTP_200_OK)
-        if request.user.is_superuser or request.user.permission_level() == 2:
-            serializer = serializers.UserSerializer(
-                request.user, data=request.data, partial=True
-            )
-        else:
-            serializer = serializers.NotAdminUserSerializer(
-                request.user, data=request.data, partial=True
-            )
+        data = request.data
+        if not (request.user.is_admin or request.user.is_superuser):
+            if 'role' in data:
+                data._mutable = True
+                data['role'] = request.user.role
+                data._mutable = False
+        serializer = serializers.UserSerializer(
+            request.user, data=data, partial=True
+        )
         serializer.is_valid(raise_exception=True)
         serializer.save()
         return Response(serializer.data, status=status.HTTP_200_OK)
@@ -65,17 +66,14 @@ class UserCreationViewSet(CreateMixin):
         serializer.is_valid(raise_exception=True)
         self.perform_create(serializer)
         user = self.get_queryset().get(
-            username=self.request.data.get('username'),
-            email=self.request.data.get('email')
+            username=serializer.validated_data.get('username'),
+            email=serializer.validated_data.get('email')
         )
-        token = Token.objects.get_or_create(user_id=user.id)
-        if type(token) == tuple:
-            key = token[0].key
-        else:
-            key = token.key
+        token = Token.objects.get_or_create(user_id=user.id)[0]
+        key = token.key
         send_mail(
             subject='ACCESS TOKEN',
-            message=f'{user.username.capitalize()}, you'
+            message=f'{user.username.capitalize()}, you\''
                     f'r key is\n key - "{key}"',
             from_email=cfg.DEFAULT_FROM_EMAIL,
             recipient_list=(user.email,)
@@ -88,7 +86,8 @@ class CustomTokenObtainView(APIView):
         serializer = serializers.TokenObtainSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
         try:
-            _user = User.objects.get(username=request.data.get('username'))
+            _user = User.objects.get(
+                username=serializer.validated_data.get('username'))
         except User.DoesNotExist:
             return Response(
                 {'username': 'Проверьте правильность username'},
@@ -96,8 +95,8 @@ class CustomTokenObtainView(APIView):
             )
         if Token.objects.filter(
             user_id__exact=_user.id,
-            key__exact=request.data.get('confirmation_code')
-        ):
+            key__exact=serializer.validated_data.get('confirmation_code')
+        ).exists():
             return Response(
                 {'token': str(AccessToken.for_user(_user))},
                 status=status.HTTP_200_OK

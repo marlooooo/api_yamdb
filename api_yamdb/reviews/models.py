@@ -7,10 +7,13 @@ from django.db import models
 
 class User(AbstractUser):
     """Класс, описывающий стандартного пользователя."""
+    USER = 'user'
+    MODERATOR = 'moderator'
+    ADMIN = 'admin'
     Role = (
-        ('user', '0'),
-        ('moderator', '1'),
-        ('admin', '2'),
+        (USER, '0'),
+        (MODERATOR, '1'),
+        (ADMIN, '2'),
     )
     email = models.EmailField(
         'email',
@@ -47,6 +50,18 @@ class User(AbstractUser):
             )
         ]
         ordering = ('-id',)
+
+    @property
+    def is_user(self):
+        return self.role == self.USER
+
+    @property
+    def is_moderator(self):
+        return self.role == self.MODERATOR
+
+    @property
+    def is_admin(self):
+        return self.role == self.ADMIN
 
     def permission_level(self) -> int:
         return int(self.get_role_display())
