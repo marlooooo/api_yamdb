@@ -36,7 +36,7 @@ class UserCreationSerializer(serializers.ModelSerializer):
         return value
 
 
-class UserSerializer(serializers.ModelSerializer):
+class UserSerializer(UserCreationSerializer):
     class Meta:
         model = User
         fields = (
@@ -56,13 +56,6 @@ class UserSerializer(serializers.ModelSerializer):
                 ),
             ),
         ]
-
-    def validate_username(self, value):
-        if 'me' == value.lower():
-            raise serializers.ValidationError(
-                'Имя пользователя не может быть me.'
-            )
-        return value
 
 
 class TokenSerializer(serializers.Serializer):
