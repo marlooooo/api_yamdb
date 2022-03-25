@@ -74,34 +74,28 @@ class TokenObtainSerializer(serializers.ModelSerializer):
 class GenreSerializer(serializers.ModelSerializer):
     """Сериализатор для жанра"""
     class Meta:
-        fields = ('name', 'slug')
         model = models.Genre
+        exclude = ('id',)
 
 
 class CategorySerializer(serializers.ModelSerializer):
     """Сериализатор для категории"""
     class Meta:
-        fields = ('name', 'slug')
         model = models.Category
+        exclude = ('id',)
 
 
 class TitleReadOnlySerializer(serializers.ModelSerializer):
     """Сериализатор для тайтлов на чтение"""
     category = CategorySerializer(read_only=True)
     genre = GenreSerializer(read_only=True, many=True)
-    rating = serializers.SerializerMethodField()
+    rating = serializers.FloatField()
 
     class Meta:
         fields = ('id', 'name', 'year', 'description',
                   'category', 'genre', 'rating')
+        read_only_fields = ('id', 'rating')
         model = models.Title
-
-    def get_rating(self, obj):
-        avg_score = (
-            models.Review.objects.filter(title__id=obj.id)
-            .aggregate(Avg('score')).get('score__avg')
-        )
-        return avg_score
 
 
 class TitleEditSerializer(serializers.ModelSerializer):
@@ -115,19 +109,11 @@ class TitleEditSerializer(serializers.ModelSerializer):
         slug_field='slug',
         many=True
     )
-    rating = serializers.SerializerMethodField()
 
     class Meta:
         fields = ('id', 'name', 'year', 'description', 'category',
-                  'genre', 'rating')
+                  'genre')
         model = models.Title
-
-    def get_rating(self, obj):
-        avg_score = (
-            models.Review.objects.filter(title__id=obj.id)
-            .aggregate(Avg('score')).get('score__avg')
-        )
-        return avg_score
 
 
 class ReviewSerializer(serializers.ModelSerializer):
