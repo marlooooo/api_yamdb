@@ -1,6 +1,7 @@
 from django.apps import apps
 from django.conf import settings as cfg
 from django.core.mail import send_mail
+from django.db.models import Avg
 from django.shortcuts import get_object_or_404
 from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework import viewsets, pagination, filters, status
@@ -130,7 +131,7 @@ class CategoryViewSet(CategoriesGenresMixin):
 class TitleViewSet(viewsets.ModelViewSet):
     """Вьюсет для тайтлов"""
     permission_classes = (AdminOrReadOnly,)
-    queryset = models.Title.objects.all()
+    queryset = models.Title.objects.all().annotate(rating=Avg('reviews__score'))
     filter_backends = [DjangoFilterBackend]
     filterset_class = TitleFilter
 

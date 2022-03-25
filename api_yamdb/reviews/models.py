@@ -1,8 +1,13 @@
-from datetime import datetime
-
 from django.contrib.auth.models import AbstractUser
 from django.core.validators import MaxValueValidator, MinValueValidator
 from django.db import models
+from django.core.exceptions import ValidationError
+from django.utils import timezone
+
+
+def year_validator(value):
+    if value < 1000 or value > timezone.now().year:
+        raise ValidationError('bad year!')
 
 
 class User(AbstractUser):
@@ -107,13 +112,14 @@ class Category(models.Model):
 
 class Title(models.Model):
     """Класс, описывающий произведение."""
+
     name = models.TextField(
         'Название',
         default='Название произведения',
     )
     year = models.IntegerField(
         'Год выпуска',
-        validators=(MaxValueValidator(datetime.now().year),),
+        validators=[year_validator],
         blank=True,
         null=True,
     )
@@ -147,7 +153,7 @@ class Review(models.Model):
     title = models.ForeignKey(
         Title,
         on_delete=models.CASCADE,
-        related_name='reviewses',
+        related_name='reviews',
     )
     text = models.TextField('Текст отзыва',)
     author = models.ForeignKey(
