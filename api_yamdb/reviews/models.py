@@ -142,7 +142,8 @@ class Title(models.Model):
     )
 
     class Meta:
-        ordering = ('-name',)
+        pass
+        # ordering = ('-name',)
 
     def __str__(self):
         return self.name
@@ -173,7 +174,7 @@ class Review(models.Model):
                 name='title_author_together'
             )
         ]
-        ordering = ('id',)
+        ordering = ('-pub_date',)
 
     def __str__(self):
         return f'Отзыв на {self.title} от {self.author}'
