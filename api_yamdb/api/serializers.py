@@ -1,5 +1,5 @@
 from django.apps import apps
-from django.db.models import Avg
+from django.shortcuts import get_object_or_404
 
 from rest_framework import serializers
 from rest_framework.validators import UniqueTogetherValidator
@@ -127,6 +127,21 @@ class ReviewSerializer(serializers.ModelSerializer):
     class Meta:
         fields = ('id', 'text', 'score', 'author', 'pub_date')
         model = models.Review
+
+    def validate(self, data):
+        """Проверка, что от одного человека на конкретное произведение
+        только один отзыв."""
+        request = self.context.get('request')
+        author = request.user
+        title_id = self.context.get('view').kwargs.get('title_id')
+        title = get_object_or_404(models.Title, id=title_id)
+        if request.method != 'PATCH' and (models.Review.objects
+                                          .filter(author=author, title=title)
+                                          .exists()):
+            raise serializers.ValidationError(
+                'Только один отзыв на произведение'
+            )
+        return data
 
 
 class CommentSerializer(serializers.ModelSerializer):
