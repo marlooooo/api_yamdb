@@ -131,7 +131,7 @@ class CategoryViewSet(CategoriesGenresMixin):
 class TitleViewSet(viewsets.ModelViewSet):
     """Вьюсет для тайтлов"""
     permission_classes = (AdminOrReadOnly,)
-    queryset = models.Title.objects.all().annotate(rating=Avg('reviews__score'))
+    queryset = models.Title.objects.all().annotate(rating=Avg('reviews__score')).order_by('-name')
     filter_backends = [DjangoFilterBackend]
     filterset_class = TitleFilter
 
@@ -149,7 +149,7 @@ class ReviewViewSet(viewsets.ModelViewSet):
 
     def get_queryset(self):
         title = get_object_or_404(models.Title, id=self.kwargs.get('title_id'))
-        queryset = models.Review.objects.filter(title=title)
+        queryset = models.Review.objects.filter(title=title).order_by('-pub_date')
         return queryset
 
     def perform_create(self, serializer):
