@@ -31,7 +31,7 @@ class UserCreationSerializer(serializers.ModelSerializer):
         """Проверяет правильность содержания поля username."""
         if 'me' == value.lower():
             raise serializers.ValidationError(
-                f'Имя пользователя не может быть "{value.lower()}".'
+                'Имя пользователя не может быть "me".'
             )
         return value
 
@@ -47,36 +47,6 @@ class UserSerializer(serializers.ModelSerializer):
             'bio',
             'role',
         )
-        validators = [
-            UniqueTogetherValidator(
-                queryset=User.objects.all(),
-                fields=(
-                    'username',
-                    'email',
-                ),
-            ),
-        ]
-
-    def validate_username(self, value):
-        if 'me' == value.lower():
-            raise serializers.ValidationError(
-                'Имя пользователя не может быть me.'
-            )
-        return value
-
-
-class NotAdminUserSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = User
-        fields = (
-            'username',
-            'email',
-            'first_name',
-            'last_name',
-            'bio',
-            'role',
-        )
-        read_only_fields = ('role',)
         validators = [
             UniqueTogetherValidator(
                 queryset=User.objects.all(),

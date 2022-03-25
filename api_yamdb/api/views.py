@@ -42,14 +42,15 @@ class UserViewSet(viewsets.ModelViewSet):
         serializer = serializers.UserSerializer(request.user)
         if request.method == 'GET':
             return Response(serializer.data, status=status.HTTP_200_OK)
-        if request.user.is_superuser or request.user.is_admin:
-            serializer = serializers.UserSerializer(
-                request.user, data=request.data, partial=True
-            )
-        else:
-            serializer = serializers.NotAdminUserSerializer(
-                request.user, data=request.data, partial=True
-            )
+        data = request.data
+        if not (request.user.is_admin or request.user.is_superuser):
+            if 'role' in data:
+                data._mutable = True
+                data['role'] = request.user.role
+                data._mutable = False
+        serializer = serializers.UserSerializer(
+            request.user, data=data, partial=True
+        )
         serializer.is_valid(raise_exception=True)
         serializer.save()
         return Response(serializer.data, status=status.HTTP_200_OK)
