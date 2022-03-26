@@ -1,13 +1,8 @@
 from django.contrib.auth.models import AbstractUser
 from django.core.validators import MaxValueValidator, MinValueValidator
 from django.db import models
-from django.core.exceptions import ValidationError
-from django.utils import timezone
 
-
-def year_validator(value):
-    if value < 1000 or value > timezone.now().year:
-        raise ValidationError('bad year!')
+from .validators import year_validator
 
 
 class User(AbstractUser):
@@ -42,7 +37,7 @@ class User(AbstractUser):
     )
     role = models.CharField(
         'role',
-        default='user',
+        default=USER,
         choices=Role,
         max_length=10,
     )
