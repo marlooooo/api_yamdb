@@ -10,6 +10,10 @@ class CreateMixin(GenericViewSet, CreateModelMixin):
     pass
 
 
-class CategoriesGenresMixin(GenericViewSet, ListModelMixin,
-                            CreateModelMixin, DestroyModelMixin):
+class CategoriesGenresMixin(
+    GenericViewSet,
+    ListModelMixin,
+    CreateModelMixin,
+    DestroyModelMixin
+):
     pass

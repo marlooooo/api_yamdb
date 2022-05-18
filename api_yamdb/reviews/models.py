@@ -188,8 +188,10 @@ class Comment(models.Model):
         on_delete=models.CASCADE,
         related_name='comments',
     )
-    pub_date = models.DateTimeField('Дата и время публикации',
-                                    auto_now_add=True)
+    pub_date = models.DateTimeField(
+        'Дата и время публикации',
+        auto_now_add=True
+    )
 
     class Meta:
         ordering = ('id',)

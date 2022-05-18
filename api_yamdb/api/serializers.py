@@ -3,9 +3,12 @@ from django.shortcuts import get_object_or_404
 from rest_framework import serializers
 from rest_framework.validators import UniqueTogetherValidator
 
-from reviews import models
 
-
+Category = apps.get_model(app_label='reviews', model_name='Category')
+Comment = apps.get_model(app_label='reviews', model_name='Comment')
+Genre = apps.get_model(app_label='reviews', model_name='Genre')
+Review = apps.get_model(app_label='reviews', model_name='Review')
+Title = apps.get_model(app_label='reviews', model_name='Title')
 User = apps.get_model(app_label='reviews', model_name='User')
 
 
@@ -67,20 +70,23 @@ class TokenObtainSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = User
-        fields = ('username', 'confirmation_code')
+        fields = (
+            'username',
+            'confirmation_code',
+        )
 
 
 class GenreSerializer(serializers.ModelSerializer):
     """Сериализатор для жанра"""
     class Meta:
-        model = models.Genre
+        model = Genre
         exclude = ('id',)
 
 
 class CategorySerializer(serializers.ModelSerializer):
     """Сериализатор для категории"""
     class Meta:
-        model = models.Category
+        model = Category
         exclude = ('id',)
 
 
@@ -91,28 +97,44 @@ class TitleReadOnlySerializer(serializers.ModelSerializer):
     rating = serializers.FloatField()
 
     class Meta:
-        fields = ('id', 'name', 'year', 'description',
-                  'category', 'genre', 'rating')
-        read_only_fields = ('id', 'rating')
-        model = models.Title
+        fields = (
+            'id',
+            'name',
+            'year',
+            'description',
+            'category',
+            'genre',
+            'rating',
+        )
+        read_only_fields = (
+            'id',
+            'rating',
+        )
+        model = Title
 
 
 class TitleEditSerializer(serializers.ModelSerializer):
     """Сериализатор для тайтлов на запись"""
     category = serializers.SlugRelatedField(
-        queryset=models.Category.objects.all(),
+        queryset=Category.objects.all(),
         slug_field='slug'
     )
     genre = serializers.SlugRelatedField(
-        queryset=models.Genre.objects.all(),
+        queryset=Genre.objects.all(),
         slug_field='slug',
         many=True
     )
 
     class Meta:
-        fields = ('id', 'name', 'year', 'description', 'category',
-                  'genre')
-        model = models.Title
+        fields = (
+            'id',
+            'name',
+            'year',
+            'description',
+            'category',
+            'genre',
+        )
+        model = Title
 
 
 class ReviewSerializer(serializers.ModelSerializer):
@@ -124,8 +146,14 @@ class ReviewSerializer(serializers.ModelSerializer):
     pub_date = serializers.DateTimeField(read_only=True)
 
     class Meta:
-        fields = ('id', 'text', 'score', 'author', 'pub_date')
-        model = models.Review
+        fields = (
+            'id',
+            'text',
+            'score',
+            'author',
+            'pub_date',
+        )
+        model = Review
 
     def validate(self, data):
         """Проверка, что от одного человека на конкретное произведение
@@ -133,10 +161,15 @@ class ReviewSerializer(serializers.ModelSerializer):
         request = self.context.get('request')
         author = request.user
         title_id = self.context.get('view').kwargs.get('title_id')
-        title = get_object_or_404(models.Title, id=title_id)
-        if request.method != 'PATCH' and (models.Review.objects
-                                          .filter(author=author, title=title)
-                                          .exists()):
+        title = get_object_or_404(Title, id=title_id)
+        if (
+            request.method != 'PATCH' and (
+            Review.objects.filter(
+                author=author,
+                title=title
+                ).exists()
+            )
+        ):
             raise serializers.ValidationError(
                 'Только один отзыв на произведение'
             )
@@ -153,4 +186,4 @@ class CommentSerializer(serializers.ModelSerializer):
 
     class Meta:
         fields = ('id', 'text', 'author', 'pub_date')
-        model = models.Comment
+        model = Comment
